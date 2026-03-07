@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "873691250785",
+    "project_id": "fitcrew-ba0bc",
+    "storage_bucket": "fitcrew-ba0bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:873691250785:android:231c4f261dcbf965c62a20",
+        "android_client_info": {
+          "package_name": "com.example.fitcrew"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs6SFCcye5Ib-l8Tx_BmxL84MlvJ6YQ-c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
