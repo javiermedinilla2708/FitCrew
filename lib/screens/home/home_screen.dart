@@ -1,10 +1,16 @@
+import 'package:fitcrew/models/sport_activity.dart';
+import 'package:fitcrew/viewmodels/activity_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final activityVM = Provider.of<ActivityViewModel>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -29,13 +35,16 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                itemCount: 5,
-                itemBuilder: (context, index) {
-                  return _buildActivityCard();
-                },
-              ),
+              child: activityVM.isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF24FF8F)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      itemCount: activityVM.activities.length,
+                      itemBuilder: (context, index) {
+                        final activity = activityVM.activities[index];
+                        return _buildActivityCard(activity, activityVM);
+                      },
+                    ),
             )
           ],
         ),
@@ -48,7 +57,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  //Widget para el filtro
   Widget _buildFilterMenu(BuildContext context) {
     return PopupMenuButton<String>(
       icon: Container(
@@ -64,28 +72,16 @@ class HomeScreen extends StatelessWidget {
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          value: 'Todos',
-          child: Text('Todos los deportes'),
-        ),
+        const PopupMenuItem<String>(value: 'Todos', child: Text('Todos los deportes')),
         const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: 'Padel',
-          child: Text('Padel'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'Running',
-          child: Text('Running'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'Yoga',
-          child: Text('Yoga'),
-        ),
+        const PopupMenuItem<String>(value: 'Padel', child: Text('Padel')),
+        const PopupMenuItem<String>(value: 'Running', child: Text('Running')),
+        const PopupMenuItem<String>(value: 'Yoga', child: Text('Yoga')),
       ],
     );
   }
 
-  Widget _buildActivityCard() {
+  Widget _buildActivityCard(SportActivity activity, ActivityViewModel vm) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(15),
@@ -110,22 +106,45 @@ class HomeScreen extends StatelessWidget {
               color: const Color(0xFF24FF8F).withOpacity(0.1),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Icon(Icons.sports_tennis, color: Colors.black),
+            child: Icon(
+              activity.sportType == 'Padel' ? Icons.sports_tennis : Icons.directions_run,
+              color: Colors.black,
+            ),
           ),
           const SizedBox(width: 15),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Partido de Padel (Nivel Medio)",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                SizedBox(height: 5),
-                Text("Polideportivo Municipal • 18:00h",
-                    style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(activity.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 5),
+                Text("${activity.location} • ${activity.level}",
+                    style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.grey),
+            onSelected: (String value) {
+              if (value == 'delete') {
+                vm.deleteActivity(activity.id);
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text("Editar"),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text(
+                  "Borrar",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -27,7 +27,7 @@ class ActivityViewModel extends ChangeNotifier{
   }
 
   //Función para borrar
-  void deleteActivity(String id,SportActivity updateActiviy){
+  void deleteActivity(String id){
     _activities.removeWhere((e)=>e.id==id);
     notifyListeners();
   }
