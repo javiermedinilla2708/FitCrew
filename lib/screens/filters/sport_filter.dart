@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -6,7 +8,6 @@ class SportFilter extends StatefulWidget{
 
   @override
   State<SportFilter> createState()=> _SportFilter();
-
 }
 
 class _SportFilter extends State<SportFilter>{
@@ -20,6 +21,7 @@ class _SportFilter extends State<SportFilter>{
 
   //Lista para guardar los deportes seleccionados
   final List <String> _selectedSports=[];
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -122,22 +124,51 @@ class _SportFilter extends State<SportFilter>{
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: _selectedSports.length >=3 ? (){
+                        onPressed: (_selectedSports.length >= 3 && !_isLoading) ? () async {
                           //Logica para guardar en Firebase y entrar en la app
+                          setState(() => _isLoading = true);
+                          
+                          try {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user != null) {
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .set({
+                                'selectedSports': _selectedSports,
+                                'setupComplete': true,
+                              }, SetOptions(merge: true));
+                            }
 
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>HomeScreen()),
-                          (route)=>false);
-                        }:null,//Desactivado si no hay 3 seleccionados
+                            if (mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context, 
+                                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                (route) => false
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error al guardar: $e"))
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        } : null, //Desactivado si no hay 3 seleccionados
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF24FF8F),
-                          disabledBackgroundColor: Colors.grey,
+                          disabledBackgroundColor: Colors.grey[300],
                           shape: StadiumBorder(),
                           elevation: 0,
                         ),
-                        child: Text(
-                          "Finalizar (${_selectedSports.length})",
-                          style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),
-                        )
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                            "Finalizar (${_selectedSports.length})",
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                          )
                       ),
                     ), 
                   ),
