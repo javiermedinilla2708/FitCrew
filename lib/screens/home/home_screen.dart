@@ -1,12 +1,58 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/sport_activity.dart';
+import 'package:fitcrew/services/auth_services.dart';
 import 'package:fitcrew/viewmodels/activity_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State <HomeScreen> createState()=> _HomeScreen();
+
+}
+
+class _HomeScreen extends State<HomeScreen>{
+  final AuthService _authService=AuthService();
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  //Lista de deportes del usuario
+  List<String>_userSports=[];
+  bool _isLoading=true;
+
+  @override
+  void initState(){
+    super.initState();
+    _loadUserData();
+  }
+
+  //Lógica para cargar los datos desde la Firestore
+  Future <void> _loadUserData()async{
+    if(user==null){
+      return;
+    }
+
+    try{
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get();
+
+      if(userDoc.exists && userDoc.data() != null){
+        setState(() {
+          _userSports=List<String>.from(userDoc.get('selectedSports')??[]);
+        });
+      }
+    }catch(e){
+      print("Error cargando datos: $e");
+    }finally{
+      setState(() => _isLoading = false);
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final activityVM = Provider.of<ActivityViewModel>(context);
@@ -35,7 +81,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: activityVM.isLoading
+              child: (activityVM.isLoading || _isLoading)
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF24FF8F)))
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -50,7 +96,9 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          // Aquí podrías abrir un diálogo para crear actividad
+        },
         backgroundColor: const Color(0xFF24FF8F),
         child: const Icon(Icons.add, color: Colors.black),
       ),
@@ -68,15 +116,32 @@ class HomeScreen extends StatelessWidget {
         child: const Icon(Icons.tune, color: Colors.black, size: 24),
       ),
       onSelected: (String value) {
+        if (value == 'Logout') {
+          _authService.signOut();
+          Navigator.pushReplacementNamed(context, '/login');
+        }
         print("Seleccionado: $value");
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(value: 'Todos', child: Text('Todos los deportes')),
         const PopupMenuDivider(),
-        const PopupMenuItem<String>(value: 'Padel', child: Text('Padel')),
-        const PopupMenuItem<String>(value: 'Running', child: Text('Running')),
-        const PopupMenuItem<String>(value: 'Yoga', child: Text('Yoga')),
+        ..._userSports.map((sport) => PopupMenuItem<String>(
+              value: sport,
+              child: Text(sport),
+            )),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'Logout', 
+          child: Row(
+            children: [
+              
+              Icon(Icons.logout, color: Colors.red, size: 20),
+              SizedBox(width: 10),
+              Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+            ],
+          )
+        ),
       ],
     );
   }
@@ -107,7 +172,7 @@ class HomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(
-              activity.sportType == 'Padel' ? Icons.sports_tennis : Icons.directions_run,
+              _getSportIcon(activity.sportType),
               color: Colors.black,
             ),
           ),
@@ -148,5 +213,19 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Método auxiliar para obtener iconos dinámicos
+  IconData _getSportIcon(String sportType) {
+    switch (sportType.toLowerCase()) {
+      case 'padel': return Icons.sports_tennis;
+      case 'running': return Icons.directions_run;
+      case 'yoga': return Icons.self_improvement;
+      case 'ciclismo': return Icons.directions_bike;
+      case 'fútbol': return Icons.sports_soccer;
+      case 'baloncesto': return Icons.sports_basketball;
+      case 'natación': return Icons.pool;
+      default: return Icons.sports_gymnastics;
+    }
   }
 }
