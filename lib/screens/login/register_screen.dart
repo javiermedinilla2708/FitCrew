@@ -1,4 +1,5 @@
 import 'package:fitcrew/screens/filters/sport_filter.dart';
+import 'package:fitcrew/services/auth_services.dart';
 import 'package:flutter/material.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -12,7 +13,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  Future<void> _handleRegister() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty || _nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, rellena todos los campos")),
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Las contraseñas no coinciden")),
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+
+      final user = await _authService.registerWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (user != null) {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SportFilter()),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error al crear la cuenta. Inténtalo de nuevo.")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.toString()}")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +76,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Stack(
         children: [
           Positioned(
-            top: -50, 
-            right: -180, 
+            top: -50,
+            right: -180,
             child: Container(
               width: 400,
               height: 400,
@@ -30,14 +85,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF24FF8F).withOpacity(0.40), 
+                    const Color(0xFF24FF8F).withOpacity(0.40),
                     Colors.white.withOpacity(0),
                   ],
                 ),
               ),
             ),
           ),
-          
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
@@ -56,7 +110,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: const Icon(Icons.arrow_back, size: 20, color: Colors.black),
                       ),
                     ),
-                    
                     const SizedBox(height: 30),
                     const Text("Únete a", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                     const Text("FitCrew", style: TextStyle(fontSize: 28, color: Color(0xFF24FF8F), fontWeight: FontWeight.bold)),
@@ -66,8 +119,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(color: Colors.grey[600], fontSize: 15, height: 1.5),
                     ),
 
+                    //Campo nombre
                     const SizedBox(height: 40),
-
                     _buildInputLabel("Nombre Completo"),
                     _buildCustomTextField(
                       controller: _nameController,
@@ -75,8 +128,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       icon: Icons.person_outline,
                     ),
 
+                    //Campo Email
                     const SizedBox(height: 20),
-
                     _buildInputLabel("Email"),
                     _buildCustomTextField(
                       controller: _emailController,
@@ -84,8 +137,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       icon: Icons.email_outlined,
                     ),
 
+                    //Campo Contraseña
                     const SizedBox(height: 20),
-
                     _buildInputLabel("Contraseña"),
                     _buildCustomTextField(
                       controller: _passwordController,
@@ -98,12 +151,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
                     _buildInputLabel("Confirmar contraseña"),
                     _buildCustomTextField(
-                      controller: _passwordController,
+                      controller: _confirmPasswordController,
                       hint: "Repetir contraseña",
                       icon: Icons.lock_outline,
                       isPassword: true,
@@ -113,25 +164,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
-
                     const SizedBox(height: 40),
-
-
                     // Botón de continuar
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=>SportFilter()));
-                        },
+                        onPressed: _isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF24FF8F),
                           shape: const StadiumBorder(),
                           elevation: 0,
                         ),
-                        child: const Text("Continuar", 
-                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.black)
+                            : const Text("Continuar",
+                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
                   ],
