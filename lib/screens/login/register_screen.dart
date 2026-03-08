@@ -151,6 +151,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
+
+                    //Campo Confirmacion de Contraseña
                     const SizedBox(height: 20),
                     _buildInputLabel("Confirmar contraseña"),
                     _buildCustomTextField(
