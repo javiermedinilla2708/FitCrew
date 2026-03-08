@@ -1,5 +1,6 @@
 import 'package:fitcrew/screens/home/home_screen.dart';
 import 'package:fitcrew/screens/login/register_screen.dart';
+import 'package:fitcrew/services/auth_services.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,7 +12,55 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  //Lógica de autorización de FireBase
+  Future<void> _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Rellena todos los campos"))
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+
+      final user = await _authService.loginWithEmail(
+        _emailController.text.trim(), 
+        _passwordController.text.trim()
+      );
+
+      if (user != null) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context, 
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error: Email o contraseña incorrectos"))
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error de autenticación: El usuario no existe o datos incorrectos"))
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           
-          // Contenido principal
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
@@ -47,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 30),
                     
-                    // Título 
                     const Text("Bienvenido de nuevo a ", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                     const Text("FitCrew", style: TextStyle(fontSize: 28, color: Color(0xFF24FF8F), fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
@@ -58,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     const SizedBox(height: 40),
 
-                    // Campo de Email
                     _buildInputLabel("Email"),
                     _buildCustomTextField(
                       controller: _emailController,
@@ -68,7 +114,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Campo de Contraseña
                     _buildInputLabel("Contraseña"),
                     _buildCustomTextField(
                       controller: _passwordController,
@@ -93,31 +138,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Botón de Login
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // Lógica de Firebase Auth
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => const HomeScreen()),
-                            (route) => false, // Esto borra el historial para que no puedan volver al registro
-                          );
-                        },
+                        onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF24FF8F),
                           shape: const StadiumBorder(),
                           elevation: 0,
                         ),
-                        child: const Text("Iniciar sesión", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.black) 
+                        : const Text("Iniciar sesión", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
 
                     const SizedBox(height: 40),
 
-                   
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey[300])),
@@ -131,22 +169,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 30),
 
-                    // Boton de Google
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _socialButton(Icons.g_mobiledata), 
-
                       ],
                     ),
 
                     const SizedBox(height: 40),
 
-                    // Link a Registro
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=> RegisterScreen()));
+                          Navigator.push(context, MaterialPageRoute(builder: (context)=> const RegisterScreen()));
                         },
                         child: RichText(
                           text: TextSpan(
@@ -169,7 +204,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Widgets auxiliares
   Widget _buildInputLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
