@@ -268,13 +268,70 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 6. FUNCIONES AUXILIARES
-  IconData _getSportIcon(String sportType) {
-    switch (sportType.toLowerCase()) {
-      case 'padel': return Icons.sports_tennis;
-      case 'running': return Icons.directions_run;
-      case 'yoga': return Icons.self_improvement;
-      default: return Icons.bolt;
-    }
+  // FUNCIÓN PARA ASIGNAR ICONOS DINÁMICOS SEGÚN EL DEPORTE
+IconData _getSportIcon(String sportType) {
+  switch (sportType.toLowerCase()) {
+    // Deportes de Raqueta
+    case 'padel':
+    case 'tenis':
+      return Icons.sports_tennis;
+    case 'bádminton':
+      return Icons.wb_iridescent_rounded;
+    case 'ping pong':
+      return Icons.table_restaurant_rounded;
+
+    // Deportes de Equipo
+    case 'fútbol':
+    case 'balonmano':
+      return Icons.sports_soccer;
+    case 'basket':
+      return Icons.sports_basketball;
+    case 'voleibol':
+      return Icons.sports_volleyball;
+    case 'rugby':
+      return Icons.sports_rugby;
+
+    // Resistencia y Cardio
+    case 'running':
+      return Icons.directions_run;
+    case 'ciclismo':
+      return Icons.directions_bike;
+    case 'natación':
+      return Icons.pool;
+    case 'triatlón':
+      return Icons.directions_run_rounded;
+    case 'patinaje':
+      return Icons.ice_skating;
+
+    // Entrenamiento y Fuerza
+    case 'yoga':
+    case 'pilates':
+      return Icons.self_improvement;
+    case 'crossfit':
+    case 'gimnasio':
+    case 'calistenia':
+      return Icons.fitness_center;
+
+    // Deportes de Combate
+    case 'boxeo':
+    case 'mma':
+      return Icons.sports_mma;
+    case 'judo':
+    case 'karate':
+      return Icons.front_hand;
+
+    // Aire Libre y Otros
+    case 'senderismo':
+      return Icons.terrain;
+    case 'escalada':
+      return Icons.landscape;
+    case 'surf':
+      return Icons.surfing;
+    case 'golf':
+      return Icons.sports_golf;
+
+    default:
+      return Icons.bolt;
   }
+}
 }
