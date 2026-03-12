@@ -1,3 +1,4 @@
+import 'package:fitcrew/screens/home/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +35,7 @@ class MainApp extends StatelessWidget {
         useMaterial3: true,
         primaryColor: const Color(0xFF24FF8F),
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }
