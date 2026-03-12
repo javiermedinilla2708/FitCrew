@@ -64,142 +64,144 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF24FF8F).withOpacity(0.40), 
-                    Colors.white.withOpacity(0),
-                  ],
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF24FF8F).withOpacity(0.40), 
+                      Colors.white.withOpacity(0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 30.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 30),
-                    
-                    const Text("Bienvenido de nuevo a ", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                    const Text("FitCrew", style: TextStyle(fontSize: 28, color: Color(0xFF24FF8F), fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Inicia sesión en tu cuenta para continuar tu viaje del fitness y conectarte con la comunidad.",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 15, height: 1.5),
-                    ),
-                    
-                    const SizedBox(height: 40),
-
-                    _buildInputLabel("Email"),
-                    _buildCustomTextField(
-                      controller: _emailController,
-                      hint: "hola@ejemplo.com",
-                      icon: Icons.email_outlined,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildInputLabel("Contraseña"),
-                    _buildCustomTextField(
-                      controller: _passwordController,
-                      hint: "Introduce tu contraseña",
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                      obscureText: !_isPasswordVisible,
-                      suffixIcon: IconButton(
-                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+            
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 30.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 30),
+                      
+                      const Text("Bienvenido de nuevo a ", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                      const Text("FitCrew", style: TextStyle(fontSize: 28, color: Color(0xFF24FF8F), fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Inicia sesión en tu cuenta para continuar tu viaje del fitness y conectarte con la comunidad.",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 15, height: 1.5),
                       ),
-                    ),
-
-                    const SizedBox(height: 15),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: const Text("¿Has olvidado la contraseña?", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                      
+                      const SizedBox(height: 40),
+      
+                      _buildInputLabel("Email"),
+                      _buildCustomTextField(
+                        controller: _emailController,
+                        hint: "hola@ejemplo.com",
+                        icon: Icons.email_outlined,
                       ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF24FF8F),
-                          shape: const StadiumBorder(),
-                          elevation: 0,
+      
+                      const SizedBox(height: 20),
+      
+                      _buildInputLabel("Contraseña"),
+                      _buildCustomTextField(
+                        controller: _passwordController,
+                        hint: "Introduce tu contraseña",
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                        obscureText: !_isPasswordVisible,
+                        suffixIcon: IconButton(
+                          icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                         ),
-                        child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.black) 
-                        : const Text("Iniciar sesión", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey[300])),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text("O CONTINUA CON", style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold)),
+      
+                      const SizedBox(height: 15),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text("¿Has olvidado la contraseña?", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
                         ),
-                        Expanded(child: Divider(color: Colors.grey[300])),
-                      ],
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _socialButton(Icons.g_mobiledata), 
-                      ],
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=> const RegisterScreen()));
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: "¿No tienes cuenta? ",
-                            style: TextStyle(color: Colors.grey[600]),
-                            children: const [
-                              TextSpan(text: "Registrate", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                            ],
+                      ),
+      
+                      const SizedBox(height: 20),
+      
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF24FF8F),
+                            shape: const StadiumBorder(),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.black) 
+                          : const Text("Iniciar sesión", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+      
+                      const SizedBox(height: 40),
+      
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey[300])),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Text("O CONTINUA CON", style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey[300])),
+                        ],
+                      ),
+      
+                      const SizedBox(height: 30),
+      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _socialButton(Icons.g_mobiledata), 
+                        ],
+                      ),
+      
+                      const SizedBox(height: 40),
+      
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=> const RegisterScreen()));
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              text: "¿No tienes cuenta? ",
+                              style: TextStyle(color: Colors.grey[600]),
+                              children: const [
+                                TextSpan(text: "Registrate", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
