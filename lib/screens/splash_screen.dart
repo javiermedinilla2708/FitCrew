@@ -1,6 +1,6 @@
 // 1. IMPORTACIONES
 import 'dart:async';
-import 'package:fitcrew/screens/login/login_screen.dart';
+import 'package:fitcrew/screens/welcome/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 // 2. DEFINICIÓN DEL WIDGET
@@ -39,7 +39,7 @@ class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMix
     Timer(const Duration(milliseconds: 3500), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
       );
     });
   }
@@ -53,64 +53,66 @@ class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMix
   // 4. CONSTRUCCIÓN DE LA INTERFAZ VISUAL
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            stops: const [0.0, 0.4],
-            colors: [
-              const Color(0xFF24FF8F).withOpacity(0.3), 
-              Colors.white,
-            ],
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              stops: const [0.0, 0.4],
+              colors: [
+                const Color(0xFF24FF8F).withOpacity(0.3), 
+                Colors.white,
+              ],
+            ),
           ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ScaleTransition(
-                scale: _animation,
-                child: RichText(
-                  text: const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "Fit",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 55,
-                          fontWeight: FontWeight.bold,
-                          fontStyle: FontStyle.italic,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ScaleTransition(
+                  scale: _animation,
+                  child: RichText(
+                    text: const TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "Fit",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 55,
+                            fontWeight: FontWeight.bold,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                      TextSpan(
-                        text: "Crew",
-                        style: TextStyle(
-                          fontSize: 45,
-                          color: Color(0xFF24FF8F),
-                          fontWeight: FontWeight.bold,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    ],
+                        TextSpan(
+                          text: "Crew",
+                          style: TextStyle(
+                            fontSize: 45,
+                            color: Color(0xFF24FF8F),
+                            fontWeight: FontWeight.bold,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-        
-              // Indicador de carga
-              SizedBox(
-                width: 100,
-                child: LinearProgressIndicator(
-                  color: const Color(0xFF24FF8F),
-                  backgroundColor: const Color(0xFF24FF8F).withOpacity(0.1),
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(10), 
-                ),
-              )
-            ],
+                const SizedBox(height: 20),
+          
+                // Indicador de carga
+                SizedBox(
+                  width: 100,
+                  child: LinearProgressIndicator(
+                    color: const Color(0xFF24FF8F),
+                    backgroundColor: const Color(0xFF24FF8F).withOpacity(0.1),
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(10), 
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

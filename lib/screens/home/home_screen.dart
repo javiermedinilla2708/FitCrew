@@ -48,38 +48,40 @@ class _HomeScreenState extends State<HomeScreen> {
   // 4. CONSTRUCCIÓN DE LA INTERFAZ PRINCIPAL 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), 
-      appBar: _buildCustomAppBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF24FF8F)))
-          : IndexedStack(
-              index: _selectedIndex,
-              children: [
-                _buildSocialFeedPage(),
-                const Center(child: Text("Pantalla de Chats")),
-                const Center(child: Text("Pantalla de Perfil")),
-              ],
-            ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: Colors.black, 
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Inicio"),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Explorar"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: "Chats"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF24FF8F),
-        child: const Icon(Icons.add, color: Colors.black, size: 30),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA), 
+        appBar: _buildCustomAppBar(),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF24FF8F)))
+            : IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildSocialFeedPage(),
+                  const Center(child: Text("Pantalla de Chats")),
+                  const Center(child: Text("Pantalla de Perfil")),
+                ],
+              ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          selectedItemColor: Colors.black, 
+          unselectedItemColor: Colors.grey,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Inicio"),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: "Explorar"),
+            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: "Chats"),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          backgroundColor: const Color(0xFF24FF8F),
+          child: const Icon(Icons.add, color: Colors.black, size: 30),
+        ),
       ),
     );
   }
