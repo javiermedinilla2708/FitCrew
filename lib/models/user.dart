@@ -1,11 +1,11 @@
-class UserProfile {
+class User {
   final String uid;
   final String name;
   final String email;
   final List<String> favoriteSports;
   final String? profilePic;
 
-  UserProfile({
+  User({
     required this.uid,
     required this.name,
     required this.email,
@@ -13,8 +13,8 @@ class UserProfile {
     this.profilePic,
   });
 
-  factory UserProfile.fromMap(Map<String, dynamic> data) {
-    return UserProfile(
+  factory User.fromMap(Map<String, dynamic> data) {
+    return User(
       uid: data['uid'] ?? '',
       name: data['name'] ?? '',
       email: data['email'] ?? '',

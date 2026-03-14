@@ -1,7 +1,10 @@
 // 1. IMPORTACIONES
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/sport_activity.dart';
+import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:flutter/material.dart';
 
 // 2. WIDGET CON ESTADO 
@@ -44,24 +47,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
-    if (user == null) return;
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .get();
+  if (user == null) return;
+  try {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get();
 
-      if (userDoc.exists && userDoc.data() != null) {
-        setState(() {
-          _userSports = List<String>.from(userDoc.get('selectedSports') ?? []);
-        });
-      }
-    } catch (e) {
-      print("Error cargando datos: $e");
-    } finally {
+    // 1. Verificamos si el widget sigue en el árbol antes de actualizar
+    if (userDoc.exists && userDoc.data() != null && mounted) {
+      setState(() {
+        _userSports = List<String>.from(userDoc.get('selectedSports') ?? []);
+      });
+    }
+  } catch (e) {
+    print("Error cargando datos: $e");
+  } finally {
+    // 2. También aquí, porque el finally se ejecuta siempre
+    if (mounted) {
       setState(() => _isLoading = false);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +86,9 @@ class _HomeScreenState extends State<HomeScreen> {
       
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreatePostSheet(context),
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context)=>CreatePostScreen()));
+        },
         backgroundColor: fitCrewGreen,
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.black, size: 32),
@@ -137,7 +146,7 @@ Widget _buildHomeFeed() {
       // --- CARGA DE POSTS REALES DESDE FIREBASE ---
       StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('posts') // O 'activities', como prefieras llamarlo
+            .collection('posts') 
             .orderBy('date', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
@@ -149,7 +158,7 @@ Widget _buildHomeFeed() {
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const SliverFillRemaining(
-              child: Center(child: Text("No hay actividades próximas. ¡Crea una!")),
+              child: Center(child: Text("No hay actividades. ¡Comparte la primera!")),
             );
           }
 
@@ -158,16 +167,16 @@ Widget _buildHomeFeed() {
           return SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                // Convertimos el documento de Firebase a nuestro modelo SportActivity
                 final data = posts[index].data() as Map<String, dynamic>;
-                final activity = SportActivity.fromMap(data, posts[index].id);
-
+                
+                // Usamos los datos directamente del mapa para el post social
                 return _buildSocialPost(
-                  activity.id,
-                  "Usuario Fit", // Aquí podrías hacer un fetch del nombre del organizador
-                  activity.sportType,
-                  activity.location,
-                  data['imageUrl'] ?? "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=500",
+                  posts[index].id,
+                  data['userName'] ?? "Usuario Fit",
+                  data['sportType'] ?? "Deporte",
+                  data['level'] ?? "Medio", // Usamos nivel en lugar de location si prefieres
+                  data['imageUrl'], // String de Base64 o URL
+                  data['description'] ?? "",
                 );
               },
               childCount: posts.length,
@@ -176,7 +185,7 @@ Widget _buildHomeFeed() {
         },
       ),
       const SliverToBoxAdapter(
-        child: SizedBox(height: 120), // Espacio extra para el scroll
+        child: SizedBox(height: 120),
       ),
     ],
   );
@@ -227,164 +236,100 @@ Widget _buildHomeFeed() {
     );
   }
 
-  Widget _buildSocialPost(String postId, String userName, String sport, String location, String imageUrl) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.09), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(location, style: const TextStyle(fontSize: 12)),
-            trailing: IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+  Widget _buildSocialPost(String postId, String userName, String sport, String level, String? imageStr, String description) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(25),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.09), blurRadius: 10)],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: const CircleAvatar(
+            backgroundColor: Color(0xFF24FF8F),
+            child: Icon(Icons.person, color: Colors.black),
           ),
-          Container(
-            height: 280,
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
-            ),
+          title: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text("$sport • $level", style: const TextStyle(fontSize: 12)),
+          trailing: IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+        ),
+        
+        // --- GESTIÓN DE IMAGEN (URL vs BASE64) ---
+        Container(
+          height: 300,
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(20),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: _renderImage(imageStr),
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: Row(
+            children: [
+              LikeButton(postId: postId),
+              const SizedBox(width: 15),
+              IconButton(
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.black87),
+                onPressed: () => _showComments(context, postId),
+              ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments').snapshots(),
+                builder: (context, snapshot) {
+                  int count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                  return Text("$count", style: const TextStyle(fontWeight: FontWeight.w600));
+                }
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(color: Colors.black, fontSize: 14),
               children: [
-                LikeButton(postId: postId), // Pasamos el postId al botón
-                const SizedBox(width: 15),
-                IconButton(
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.black87),
-                  onPressed: () => _showComments(context, postId),
-                ),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments').snapshots(),
-                  builder: (context, snapshot) {
-                    int count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                    return Text("$count", style: const TextStyle(fontWeight: FontWeight.w600));
-                  }
-                ),
+                TextSpan(text: "$userName ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                TextSpan(text: description),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(color: Colors.black, fontSize: 14),
-                children: [
-                  TextSpan(text: "$userName ", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  TextSpan(text: "¡Entrenamiento de $sport a tope! 🚀"),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  void _showCreatePostSheet(BuildContext context) {
-  final TextEditingController descriptionController = TextEditingController();
-  String selectedSport = _userSports.isNotEmpty ? _userSports[0] : "Running";
-
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => StatefulBuilder( // Usamos StatefulBuilder para que el dropdown funcione dentro del modal
-      builder: (context, setModalState) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          left: 20, right: 20, top: 10,
         ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 15),
-                height: 5, width: 40,
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const Text("¿Qué has entrenado hoy?", 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            
-            // Selector de Deporte (basado en los deportes del usuario)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedSport,
-                  isExpanded: true,
-                  items: (_userSports.isNotEmpty ? _userSports : ["Running", "Padel", "Gym"])
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (val) => setModalState(() => selectedSport = val!),
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 15),
-            
-            // Input de descripción
-            TextField(
-              controller: descriptionController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: "Ej: ¡6km de carrera suave por el parque! Me he sentido genial...",
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Botón de Publicar
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Aquí llamarías a tu ViewModel para guardar en Firebase
-                  // viewModel.createSocialPost(sport: selectedSport, description: descriptionController.text...)
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24FF8F),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 0,
-                ),
-                child: const Text("COMPARTIR LOGRO", 
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     ),
   );
 }
+Widget _renderImage(String? imageStr) {
+  if (imageStr == null || imageStr.isEmpty) {
+    return const Icon(Icons.fitness_center, size: 50, color: Colors.grey);
+  }
+
+  // Si empieza por http, es una URL normal
+  if (imageStr.startsWith('http')) {
+    return Image.network(imageStr, fit: BoxFit.cover);
+  }
+
+  // Si no, asumimos que es Base64
+  try {
+    return Image.memory(
+      base64Decode(imageStr),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+    );
+  } catch (e) {
+    return const Icon(Icons.broken_image);
+  }
+}
+  
   Widget _buildStoryItem(String sport) {
     return Padding(
       padding: const EdgeInsets.only(right: 15),
