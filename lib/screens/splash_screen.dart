@@ -1,6 +1,6 @@
 // 1. IMPORTACIONES
 import 'dart:async';
-import 'package:fitcrew/screens/welcome/welcome_screen.dart';
+import 'package:fitcrew/services/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 
 // 2. DEFINICIÓN DEL WIDGET
@@ -39,7 +39,7 @@ class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMix
     Timer(const Duration(milliseconds: 3500), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
       );
     });
   }
