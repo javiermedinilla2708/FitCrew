@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class SportActivity {
   final String id;
   final String title;
@@ -8,6 +10,7 @@ class SportActivity {
   final int totalSlots;
   final int occupiedSlots;
   final String level;
+  final String? imageUrl; 
 
   SportActivity({
     required this.id,
@@ -19,56 +22,44 @@ class SportActivity {
     required this.totalSlots,
     required this.occupiedSlots,
     required this.level,
+    this.imageUrl,
   });
 
-  // Convierte un JSON/Map de la base de datos a un objeto de clase
   factory SportActivity.fromMap(Map<String, dynamic> data, String id) {
+    DateTime parsedDate;
+    if (data['date'] is Timestamp) {
+      parsedDate = (data['date'] as Timestamp).toDate();
+    } else if (data['date'] is String) {
+      parsedDate = DateTime.parse(data['date']);
+    } else {
+      parsedDate = DateTime.now();
+    }
+
     return SportActivity(
       id: id,
       title: data['title'] ?? '',
       sportType: data['sportType'] ?? 'Otros',
       location: data['location'] ?? '',
-      date: data['date'] is DateTime 
-          ? data['date'] 
-          : DateTime.parse(data['date']), // Maneja string o DateTime
+      date: parsedDate,
       organizerId: data['organizerId'] ?? '',
       totalSlots: data['totalSlots'] ?? 0,
       occupiedSlots: data['occupiedSlots'] ?? 0,
       level: data['level'] ?? 'Todos',
+      imageUrl: data['imageUrl'],
     );
   }
 
-  // Convierte el objeto a un Map para guardar o editar en la base de datos
   Map<String, dynamic> toMap() {
     return {
       'title': title,
       'sportType': sportType,
       'location': location,
-      'date': date.toIso8601String(),
+      'date': date, 
       'organizerId': organizerId,
       'totalSlots': totalSlots,
       'occupiedSlots': occupiedSlots,
       'level': level,
+      'imageUrl': imageUrl,
     };
-  }
-
-  // Método auxiliar para crear una copia modificada 
-  SportActivity copyWith({
-    String? title,
-    String? location,
-    int? totalSlots,
-    String? level,
-  }) {
-    return SportActivity(
-      id: id,
-      title: title ?? this.title,
-      sportType: sportType,
-      location: location ?? this.location,
-      date: date,
-      organizerId: organizerId,
-      totalSlots: totalSlots ?? this.totalSlots,
-      occupiedSlots: occupiedSlots,
-      level: level ?? this.level,
-    );
   }
 }
