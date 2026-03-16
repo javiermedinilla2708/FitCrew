@@ -1,13 +1,15 @@
+// ==========================================
 // 1. IMPORTACIONES
+// ==========================================
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fitcrew/models/sport_activity.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:flutter/material.dart';
 
-// 2. WIDGET CON ESTADO 
+// ==========================================
+// 2. WIDGET PRINCIPAL (HOME SCREEN)
+// ==========================================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -20,176 +22,164 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> _userSports = [];
   bool _isLoading = true;
   int _selectedIndex = 0;
-
+  final Color fitCrewGreen = const Color(0xFF24FF8F);
+  String _currentUserName = "Usuario";
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
 
-  Future<void> _addCommentToFirebase(String postId, String commentText) async {
-    if (user == null) return;
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .collection('comments')
-          .add({
-        'userId': user!.uid,
-        'userName': user!.displayName ?? "Usuario Fit",
-        'comment': commentText,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print("Error al comentar: $e");
-    }
-  }
+  // --- Lógica de Firebase ---
 
   Future<void> _loadUserData() async {
-  if (user == null) return;
+  if (user == null) {
+    print("DEBUG-FIT: No hay usuario autenticado.");
+    if (mounted) setState(() => _isLoading = false);
+    return;
+  }
+
+  print("DEBUG-FIT: Buscando UID: ${user!.uid}");
+
   try {
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user!.uid)
         .get();
 
-    // 1. Verificamos si el widget sigue en el árbol antes de actualizar
-    if (userDoc.exists && userDoc.data() != null && mounted) {
-      setState(() {
-        _userSports = List<String>.from(userDoc.get('selectedSports') ?? []);
-      });
+    if (!userDoc.exists) {
+      print("DEBUG-FIT: ¡ERROR! El documento con ID ${user!.uid} NO EXISTE en la colección 'users'.");
+    } else {
+      Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+      print("DEBUG-FIT: Datos encontrados: $data");
+
+      if (mounted) {
+        setState(() {
+          // Cambia 'username' por el nombre exacto que veas en el print de arriba
+          _currentUserName = data['username'] ?? data['name'] ?? data['display_name'] ?? "Nombre no hallado";
+          _userSports = List<String>.from(data['selectedSports'] ?? []);
+        });
+      }
     }
   } catch (e) {
-    print("Error cargando datos: $e");
+    print("DEBUG-FIT: Excepción capturada: $e");
   } finally {
-    // 2. También aquí, porque el finally se ejecuta siempre
     if (mounted) {
       setState(() => _isLoading = false);
     }
   }
 }
 
+  Future<void> _addCommentToFirebase(String postId, String commentText) async {
+  if (user == null) return;
+  try {
+    await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .add({
+      'userId': user!.uid,
+      'userName': _currentUserName, // <--- Aquí ya usamos el nombre real
+      'comment': commentText,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    debugPrint("Error al comentar: $e");
+  }
+}
+
   @override
   Widget build(BuildContext context) {
-    const Color fitCrewGreen = Color(0xFF24FF8F);
-
     return Scaffold(
       extendBody: true,
-      backgroundColor: Colors.white, 
-      
+      backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(child: LinearProgressIndicator(color: fitCrewGreen))
-          : _selectedIndex == 0 
-              ? _buildHomeFeed() 
+          ? Center(
+              child: SizedBox(
+                width: 100,
+                child: LinearProgressIndicator(color: fitCrewGreen),
+              ),
+            )
+          : _selectedIndex == 0
+              ? _buildHomeFeed()
               : _buildOtherScreens(),
-      
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context)=>CreatePostScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const CreatePostScreen()));
         },
         backgroundColor: fitCrewGreen,
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.black, size: 32),
       ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
 
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BottomAppBar(
-            height: 65,
-            color: Colors.white,
-            elevation: 10,
-            notchMargin: 8,
-            shape: const CircularNotchedRectangle(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // ==========================================
+  // 3. COMPONENTES DEL FEED
+  // ==========================================
+
+  Widget _buildHomeFeed() {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverAppBar(
+          floating: true,
+          pinned: true,
+          expandedHeight: 170.0,
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Column(
               children: [
-                _buildNavItem(Icons.home_outlined, 0),
-                _buildNavItem(Icons.search, 1),
-                const SizedBox(width: 40),
-                _buildNavItem(Icons.calendar_today_rounded, 3),
-                _buildNavItem(Icons.person_outline, 4),
+                const SizedBox(height: 50),
+                _buildTopHeader(),
+                _buildStoriesRow(),
               ],
             ),
           ),
         ),
-      ),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('posts')
+              .orderBy('date', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator(color: fitCrewGreen)),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const SliverFillRemaining(
+                child: Center(child: Text("No hay actividades aún")),
+              );
+            }
+
+            final posts = snapshot.data!.docs;
+            return SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final data = posts[index].data() as Map<String, dynamic>;
+                  return _buildSocialPost(
+                    posts[index].id,
+                    data['userName'] ?? "Usuario", // Solo el nombre
+                    data['sportType'] ?? "Deporte",
+                    data['level'] ?? "Medio",
+                    data['imageUrl'],
+                    data['description'] ?? "",
+                  );
+                },
+                childCount: posts.length,
+              ),
+            );
+          },
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+      ],
     );
   }
-
-  // ... (Tus importaciones y modelos se mantienen igual arriba)
-
-Widget _buildHomeFeed() {
-  return CustomScrollView(
-    physics: const BouncingScrollPhysics(),
-    slivers: [
-      SliverAppBar(
-        floating: true,
-        pinned: true,
-        expandedHeight: 170.0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Column(
-            children: [
-              const SizedBox(height: 50),
-              _buildTopHeader(),
-              _buildStoriesRow(),
-            ],
-          ),
-        ),
-      ),
-      // --- CARGA DE POSTS REALES DESDE FIREBASE ---
-      StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('posts') 
-            .orderBy('date', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(color: Color(0xFF24FF8F))),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const SliverFillRemaining(
-              child: Center(child: Text("No hay actividades. ¡Comparte la primera!")),
-            );
-          }
-
-          final posts = snapshot.data!.docs;
-
-          return SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final data = posts[index].data() as Map<String, dynamic>;
-                
-                // Usamos los datos directamente del mapa para el post social
-                return _buildSocialPost(
-                  posts[index].id,
-                  data['userName'] ?? "Usuario Fit",
-                  data['sportType'] ?? "Deporte",
-                  data['level'] ?? "Medio", // Usamos nivel en lugar de location si prefieres
-                  data['imageUrl'], // String de Base64 o URL
-                  data['description'] ?? "",
-                );
-              },
-              childCount: posts.length,
-            ),
-          );
-        },
-      ),
-      const SliverToBoxAdapter(
-        child: SizedBox(height: 120),
-      ),
-    ],
-  );
-}
 
   Widget _buildTopHeader() {
     return Padding(
@@ -198,10 +188,10 @@ Widget _buildHomeFeed() {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           RichText(
-            text: const TextSpan(
+            text: TextSpan(
               children: [
-                TextSpan(text: 'Fit', style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
-                TextSpan(text: 'Crew', style: TextStyle(color: Color(0xFF24FF8F), fontSize: 24, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                const TextSpan(text: 'Fit', style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                TextSpan(text: 'Crew', style: TextStyle(color: fitCrewGreen, fontSize: 24, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
               ],
             ),
           ),
@@ -228,108 +218,6 @@ Widget _buildHomeFeed() {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
-    bool isSelected = _selectedIndex == index;
-    return IconButton(
-      icon: Icon(icon, color: isSelected ? const Color(0xFF24FF8F) : Colors.grey, size: isSelected ? 30 : 26),
-      onPressed: () => setState(() => _selectedIndex = index),
-    );
-  }
-
-  Widget _buildSocialPost(String postId, String userName, String sport, String level, String? imageStr, String description) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(25),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.09), blurRadius: 10)],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          leading: const CircleAvatar(
-            backgroundColor: Color(0xFF24FF8F),
-            child: Icon(Icons.person, color: Colors.black),
-          ),
-          title: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text("$sport • $level", style: const TextStyle(fontSize: 12)),
-          trailing: IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
-        ),
-        
-        // --- GESTIÓN DE IMAGEN (URL vs BASE64) ---
-        Container(
-          height: 300,
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: _renderImage(imageStr),
-          ),
-        ),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: Row(
-            children: [
-              LikeButton(postId: postId),
-              const SizedBox(width: 15),
-              IconButton(
-                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.black87),
-                onPressed: () => _showComments(context, postId),
-              ),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments').snapshots(),
-                builder: (context, snapshot) {
-                  int count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                  return Text("$count", style: const TextStyle(fontWeight: FontWeight.w600));
-                }
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(color: Colors.black, fontSize: 14),
-              children: [
-                TextSpan(text: "$userName ", style: const TextStyle(fontWeight: FontWeight.bold)),
-                TextSpan(text: description),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-Widget _renderImage(String? imageStr) {
-  if (imageStr == null || imageStr.isEmpty) {
-    return const Icon(Icons.fitness_center, size: 50, color: Colors.grey);
-  }
-
-  // Si empieza por http, es una URL normal
-  if (imageStr.startsWith('http')) {
-    return Image.network(imageStr, fit: BoxFit.cover);
-  }
-
-  // Si no, asumimos que es Base64
-  try {
-    return Image.memory(
-      base64Decode(imageStr),
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-    );
-  } catch (e) {
-    return const Icon(Icons.broken_image);
-  }
-}
-  
   Widget _buildStoryItem(String sport) {
     return Padding(
       padding: const EdgeInsets.only(right: 15),
@@ -338,9 +226,8 @@ Widget _renderImage(String? imageStr) {
           Container(
             padding: const EdgeInsets.all(2),
             decoration: const BoxDecoration(
-              shape: BoxShape.circle, 
-              gradient: LinearGradient(colors: [Color(0xFF24FF8F), Colors.blueAccent])
-            ),
+                shape: BoxShape.circle,
+                gradient: LinearGradient(colors: [Color(0xFF24FF8F), Colors.blueAccent])),
             child: CircleAvatar(
               radius: 28,
               backgroundColor: Colors.white,
@@ -353,11 +240,137 @@ Widget _renderImage(String? imageStr) {
     );
   }
 
+  // ==========================================
+  // 4. WIDGETS DE POST SOCIAL
+  // ==========================================
+
+  Widget _buildSocialPost(String postId, String userName, String sport, String level, String? imageStr, String description) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.09), blurRadius: 10)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: Color(0xFF24FF8F),
+              child: Icon(Icons.person, color: Colors.black),
+            ),
+            title: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text("$sport • $level", style: const TextStyle(fontSize: 12)),
+            trailing: IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+          ),
+          Container(
+            height: 300,
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _renderImage(imageStr),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Row(
+              children: [
+                LikeButton(postId: postId),
+                const SizedBox(width: 15),
+                IconButton(
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.black87),
+                  onPressed: () => _showComments(context, postId),
+                ),
+                StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments').snapshots(),
+                    builder: (context, snapshot) {
+                      int count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                      return Text("$count", style: const TextStyle(fontWeight: FontWeight.w600));
+                    }),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.black, fontSize: 14),
+                children: [
+                  TextSpan(text: "$userName ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  TextSpan(text: description),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _renderImage(String? imageStr) {
+    if (imageStr == null || imageStr.isEmpty) {
+      return const Icon(Icons.fitness_center, size: 50, color: Colors.grey);
+    }
+    if (imageStr.startsWith('http')) {
+      return Image.network(imageStr, fit: BoxFit.cover);
+    }
+    try {
+      return Image.memory(
+        base64Decode(imageStr),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+      );
+    } catch (e) {
+      return const Icon(Icons.broken_image);
+    }
+  }
+
+  // ==========================================
+  // 5. NAVEGACIÓN Y OTROS
+  // ==========================================
+
+  Widget _buildBottomNav() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: BottomAppBar(
+        height: 65,
+        color: Colors.white,
+        elevation: 10,
+        notchMargin: 8,
+        shape: const CircularNotchedRectangle(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildNavItem(Icons.home_outlined, 0),
+            _buildNavItem(Icons.search, 1),
+            const SizedBox(width: 40),
+            _buildNavItem(Icons.calendar_today_rounded, 3),
+            _buildNavItem(Icons.person_outline, 4),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index) {
+    bool isSelected = _selectedIndex == index;
+    return IconButton(
+      icon: Icon(icon, color: isSelected ? fitCrewGreen : Colors.grey, size: isSelected ? 30 : 26),
+      onPressed: () => setState(() => _selectedIndex = index),
+    );
+  }
+
   Widget _buildOtherScreens() {
     return IndexedStack(
       index: _selectedIndex,
       children: const [
-        SizedBox(), 
+        SizedBox(),
         Center(child: Text("Búsqueda")),
         SizedBox(),
         Center(child: Text("Actividades")),
@@ -369,32 +382,22 @@ Widget _renderImage(String? imageStr) {
   IconData _getSportIcon(String sportType) {
     switch (sportType.toLowerCase()) {
       case 'padel': case 'tenis': return Icons.sports_tennis;
-      case 'bádminton': return Icons.wb_iridescent_rounded;
-      case 'ping pong': return Icons.table_restaurant_rounded;
-      case 'fútbol': case 'balonmano': return Icons.sports_soccer;
-      case 'basket': return Icons.sports_basketball;
-      case 'voleibol': return Icons.sports_volleyball;
-      case 'rugby': return Icons.sports_rugby;
       case 'running': return Icons.directions_run;
+      case 'basket': return Icons.sports_basketball;
+      case 'fútbol': return Icons.sports_soccer;
       case 'ciclismo': return Icons.directions_bike;
-      case 'natación': return Icons.pool;
-      case 'triatlón': return Icons.directions_run_rounded;
-      case 'patinaje': return Icons.ice_skating;
-      case 'yoga': case 'pilates': return Icons.self_improvement;
-      case 'crossfit': case 'gimnasio': case 'calistenia': return Icons.fitness_center;
-      case 'boxeo': case 'mma': return Icons.sports_mma;
-      case 'judo': case 'karate': return Icons.front_hand;
-      case 'senderismo': return Icons.terrain;
-      case 'escalada': return Icons.landscape;
-      case 'surf': return Icons.surfing;
-      case 'golf': return Icons.sports_golf;
+      case 'crossfit': case 'gimnasio': return Icons.fitness_center;
+      case 'yoga': return Icons.self_improvement;
       default: return Icons.bolt;
     }
   }
 
+  // ==========================================
+  // 6. MODAL DE COMENTARIOS
+  // ==========================================
+
   void _showComments(BuildContext context, String postId) {
     final TextEditingController commentController = TextEditingController();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -417,7 +420,6 @@ Widget _renderImage(String? imageStr) {
               ),
               const Text("Comentarios", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const Divider(),
-              
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -444,7 +446,6 @@ Widget _renderImage(String? imageStr) {
                   },
                 ),
               ),
-
               Padding(
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom + 15,
@@ -466,7 +467,7 @@ Widget _renderImage(String? imageStr) {
                     ),
                     const SizedBox(width: 10),
                     CircleAvatar(
-                      backgroundColor: const Color(0xFF24FF8F),
+                      backgroundColor: fitCrewGreen,
                       child: IconButton(
                         icon: const Icon(Icons.send, color: Colors.black, size: 20),
                         onPressed: () async {
@@ -488,7 +489,9 @@ Widget _renderImage(String? imageStr) {
   }
 }
 
-// 3. WIDGET LIKEBUTTON ACTUALIZADO PARA FIREBASE
+// ==========================================
+// 7. WIDGET LIKEBUTTON
+// ==========================================
 class LikeButton extends StatelessWidget {
   final String postId;
   const LikeButton({super.key, required this.postId});
@@ -505,9 +508,7 @@ class LikeButton extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Icon(Icons.favorite_border_rounded);
-
         final likes = snapshot.data!.docs;
-        // Comprobar si el usuario actual ya dio like
         final bool isLiked = likes.any((doc) => doc.id == userId);
 
         return Row(
@@ -519,10 +520,7 @@ class LikeButton extends StatelessWidget {
               ),
               onPressed: () => _toggleLike(postId, userId, isLiked),
             ),
-            Text(
-              "${likes.length}",
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            Text("${likes.length}", style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
         );
       },
@@ -531,19 +529,11 @@ class LikeButton extends StatelessWidget {
 
   Future<void> _toggleLike(String postId, String? userId, bool isLiked) async {
     if (userId == null) return;
-
-    final docRef = FirebaseFirestore.instance
-        .collection('posts')
-        .doc(postId)
-        .collection('likes')
-        .doc(userId);
-
+    final docRef = FirebaseFirestore.instance.collection('posts').doc(postId).collection('likes').doc(userId);
     if (isLiked) {
-      await docRef.delete(); // Quitar like
+      await docRef.delete();
     } else {
-      await docRef.set({
-        'timestamp': FieldValue.serverTimestamp(),
-      }); // Añadir like
+      await docRef.set({'timestamp': FieldValue.serverTimestamp()});
     }
   }
 }
