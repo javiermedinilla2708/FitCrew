@@ -4,18 +4,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  
   //Funcion del registro
-  Future<User?> registerWithEmail(String email, String password) async {
-    try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email, 
-        password: password
-      );
-      return result.user;
-    } catch (e) {
-      print("Error en registro: ${e.toString()}");
-      return null;
+  Future<User?> registerWithEmail(String email, String password, String name) async {
+    UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+    User? user = result.user;
+
+    if (user != null) {
+      // 1. Actualizamos el perfil de Firebase Auth (Opcional pero recomendado)
+      await user.updateDisplayName(name);
+
+      // 2. Guardamos en Firestore (Crucial para tu ProfileScreen)
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'name': name,
+        'email': email,
+        'createdAt': DateTime.now(),
+        'selectedSports': [], // Se llenará en la siguiente pantalla
+      });
     }
+    return user;
   }
 
   //Funcion del login

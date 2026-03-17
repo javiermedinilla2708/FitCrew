@@ -40,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final user = await _authService.registerWithEmail(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        _nameController.text.trim()
       );
 
       if (user != null) {

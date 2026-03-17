@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
+import 'package:fitcrew/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 // ==========================================
@@ -369,12 +370,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildOtherScreens() {
     return IndexedStack(
       index: _selectedIndex,
-      children: const [
-        SizedBox(),
-        Center(child: Text("Búsqueda")),
-        SizedBox(),
-        Center(child: Text("Actividades")),
-        Center(child: Text("Perfil")),
+      children: [
+        const SizedBox(),
+        const Center(child: Text("Búsqueda")),
+        const SizedBox(),
+        const Center(child: Text("Actividades")),
+        ProfileScreen(
+          userSports:_userSports,
+          userEmail: user?.email??"",
+          userName: user?.displayName??"Usuario",
+        )
       ],
     );
   }
