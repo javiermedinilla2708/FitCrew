@@ -1,18 +1,15 @@
-// 1. IMPORTACIONES
 import 'dart:async';
-import 'package:fitcrew/services/auth_wrapper.dart';
+import 'package:fitcrew/screens/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 
-// 2. DEFINICIÓN DEL WIDGET
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplasScreen();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-// 3. LÓGICA DEL ESTADO Y ANIMACIONES
-class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -20,27 +17,25 @@ class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMix
   void initState() {
     super.initState();
 
-    // Configuración del controlador de la animación
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500), 
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Definición de la curva de animación 
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.elasticInOut,
     );
 
-    // Iniciar el movimiento de la animación
     _controller.forward();
 
-    // Temporizador para cambiar de pantalla automáticamente tras 3.5 segundos
     Timer(const Duration(milliseconds: 3500), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AuthWrapper()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+        );
+      }
     });
   }
 
@@ -50,71 +45,132 @@ class _SplasScreen extends State<SplashScreen> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  // 4. CONSTRUCCIÓN DE LA INTERFAZ VISUAL
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              stops: const [0.0, 0.4],
-              colors: [
-                const Color(0xFF24FF8F).withOpacity(0.3), 
-                Colors.white,
-              ],
+    const colorMentol = Color(0xFFDBF0DD);
+    const colorPrimario = Color(0xFF235347);
+    const colorFondoOscuro = Color(0xFF051F20);
+    const colorAcento = Color(0xFF8CB79B);
+
+    return Scaffold(
+      backgroundColor: colorPrimario,
+      body: Stack( 
+        children: [
+          Positioned(
+            top: -100,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    colorPrimario.withOpacity(0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
             ),
           ),
-          child: Center(
+
+          Positioned(
+            bottom: -150,
+            right: -50,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    colorAcento.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  colorPrimario.withOpacity(0.1),
+                  Colors.transparent,
+                  colorFondoOscuro.withOpacity(0.5),
+                ],
+              ),
+            ),
+          ),
+
+          // --- CONTENIDO CENTRAL ---
+          Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ScaleTransition(
                   scale: _animation,
-                  child: RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "Fit",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 55,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                          ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.fitness_center, color: colorMentol.withOpacity(0.2), size: 40),
+                      const SizedBox(height: 10),
+                      RichText(
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "Fit",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 60,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                                letterSpacing: -2,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "Crew",
+                              style: TextStyle(
+                                fontSize: 60,
+                                color: colorMentol,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                                letterSpacing: -2,
+                              ),
+                            )
+                          ],
                         ),
-                        TextSpan(
-                          text: "Crew",
-                          style: TextStyle(
-                            fontSize: 45,
-                            color: Color(0xFF24FF8F),
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        )
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
-          
-                // Indicador de carga
-                SizedBox(
-                  width: 100,
-                  child: LinearProgressIndicator(
-                    color: const Color(0xFF24FF8F),
-                    backgroundColor: const Color(0xFF24FF8F).withOpacity(0.1),
-                    minHeight: 6,
-                    borderRadius: BorderRadius.circular(10), 
+                const SizedBox(height: 40),
+                
+                // Indicador de carga estilizado con "Glow"
+                Container(
+                  width: 140,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorMentol.withOpacity(0.2),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                      )
+                    ]
                   ),
-                )
+                  child: LinearProgressIndicator(
+                    color: colorMentol,
+                    backgroundColor: Colors.white.withOpacity(0.05),
+                    minHeight: 3,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

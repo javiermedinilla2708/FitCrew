@@ -11,9 +11,18 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _descriptionController = TextEditingController();
-  String? _selectedSport; 
+  String? _selectedSport;
   String _selectedLevel = "Medio";
-  final Color fitCrewGreen = const Color(0xFF24FF8F);
+  
+  // Nuevas variables para los campos sociales
+  String _location = "Añadir ubicación";
+  List<String> _taggedFriends = [];
+
+  // --- PALETA DE COLORES FITCREW ---
+  final Color colorVerdeBosque = const Color(0xFF234D41);
+  final Color colorVerdeMenta = const Color(0xFFD3E6DB);
+  final Color colorFondoFrio = const Color(0xFFFBFDFA);
+  
   final List<String> _levels = ["Principiante", "Medio", "Avanzado", "Pro"];
 
   @override
@@ -21,10 +30,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final postVM = Provider.of<PostViewModel>(context, listen: false);
-      
-      // Cargamos los deportes del usuario desde Firestore
       await postVM.loadUserSports();
-
       if (postVM.userSports.isNotEmpty) {
         setState(() {
           _selectedSport = postVM.userSports.first;
@@ -41,72 +47,84 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchamos los cambios en el ViewModel
     final postVM = context.watch<PostViewModel>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorFondoFrio,
       appBar: AppBar(
-        title: const Text("Nuevo Logro", 
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
-        backgroundColor: Colors.white,
+        title: Text("Nuevo Logro", 
+          style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.w900, fontSize: 20)),
+        backgroundColor: colorFondoFrio,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close_rounded, color: colorVerdeBosque),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           if (!postVM.isLoading)
             Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: TextButton(
-                onPressed: () async {
-                  if (postVM.imageFile == null) {
-                    _showSnackBar("¡Oye! Sube una foto de tu entreno 📸");
-                    return;
-                  }
-                  if (_selectedSport == null) {
-                    _showSnackBar("Selecciona un deporte primero");
-                    return;
-                  }
-                  final success = await postVM.uploadPost(
-                    description: _descriptionController.text,
-                    sportType: _selectedSport!,
-                    level: _selectedLevel,
-                  );
-                  if (success && mounted) Navigator.pop(context);
-                },
-                child: Text("Publicar", 
-                  style: TextStyle(color: fitCrewGreen, fontWeight: FontWeight.bold, fontSize: 16)),
+              padding: const EdgeInsets.only(right: 12.0),
+              child: Center(
+                child: InkWell(
+                  onTap: () async {
+                    if (postVM.imageFile == null) {
+                      _showSnackBar("¡Oye! Sube una foto de tu entreno 📸");
+                      return;
+                    }
+                    if (_selectedSport == null) {
+                      _showSnackBar("Selecciona un deporte primero");
+                      return;
+                    }
+                    final success = await postVM.uploadPost(
+                      description: _descriptionController.text,
+                      sportType: _selectedSport!,
+                      level: _selectedLevel,
+                    );
+                    if (success && mounted) Navigator.pop(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorVerdeBosque,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text("Publicar", 
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
               ),
             )
         ],
       ),
       body: postVM.isLoading 
-        ? Center(child: CircularProgressIndicator(color: fitCrewGreen))
+        ? Center(child: CircularProgressIndicator(color: colorVerdeBosque))
         : SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 _buildImageSection(postVM),
+                const SizedBox(height: 25),
+
+                // --- NUEVA SECCIÓN: UBICACIÓN Y AMIGOS ---
+                _buildSocialShortcuts(),
                 const SizedBox(height: 30),
 
                 _sectionTitle("¿Qué has entrenado?"),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 _buildSportsList(postVM),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 _sectionTitle("Nivel de intensidad"),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 _buildLevelsList(),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 _sectionTitle("Descripción"),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 _buildDescriptionField(),
                 const SizedBox(height: 40),
               ],
@@ -115,47 +133,134 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  // --- COMPONENTES DE UI ---
+  // --- COMPONENTES SOCIALES (NUEVOS) ---
 
-  Widget _buildImageSection(PostViewModel postVM) {
-    return GestureDetector(
-      onTap: () => postVM.pickImage(),
-      child: Container(
-        width: double.infinity,
-        height: 300,
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(25),
-          image: postVM.imageFile != null 
-            ? DecorationImage(image: FileImage(postVM.imageFile!), fit: BoxFit.cover)
-            : null,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
-          ],
+  Widget _buildSocialShortcuts() {
+    return Row(
+      children: [
+        _buildSmallActionChip(
+          icon: Icons.location_on_rounded,
+          label: _location,
+          onTap: () {
+            // Aquí iría la lógica para abrir el selector de mapas
+            _showSnackBar("Próximamente: Selector de lugares");
+          },
         ),
-        child: postVM.imageFile == null
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_a_photo_rounded, size: 50, color: Colors.grey[400]),
-                const SizedBox(height: 12),
-                Text("Toca para añadir una foto", 
-                  style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
-              ],
-            )
-          : Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: CircleAvatar(
-                  backgroundColor: Colors.black.withOpacity(0.5),
-                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
+        const SizedBox(width: 10),
+        _buildSmallActionChip(
+          icon: Icons.group_add_rounded,
+          label: _taggedFriends.isEmpty ? "Con quién" : "${_taggedFriends.length} personas",
+          onTap: () {
+            // Aquí iría la lógica para abrir el buscador de usuarios
+            _showSnackBar("Próximamente: Etiquetar amigos");
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSmallActionChip({required IconData icon, required String label, required Function() onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[100]!),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: colorVerdeBosque),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  // --- COMPONENTES DE UI EXISTENTES MEJORADOS ---
+
+  Widget _buildImageSection(PostViewModel postVM) {
+  return GestureDetector(
+    onTap: () => postVM.pickImage(),
+    child: Container(
+      width: double.infinity,
+      // Usamos constraints en lugar de una altura fija
+      constraints: const BoxConstraints(
+        minHeight: 200, // Altura mínima para el botón de "Añadir foto"
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: colorVerdeBosque.withOpacity(0.08), 
+            blurRadius: 20, 
+            offset: const Offset(0, 10)
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 1. Imagen seleccionada (Altura automática)
+            if (postVM.imageFile != null)
+              Image.file(
+                postVM.imageFile!,
+                fit: BoxFit.fitWidth, // Se expande al ancho y ajusta su propia altura
+                width: double.infinity,
+              ),
+
+            // 2. Estado vacío (Placeholder)
+            if (postVM.imageFile == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 60), // Espaciado para el botón
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_a_photo_rounded, size: 50, color: colorVerdeMenta),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Añadir foto del entreno",
+                      style: TextStyle(
+                        color: colorVerdeBosque.withOpacity(0.5), 
+                        fontWeight: FontWeight.w600
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // 3. Botón de Editar/Cambiar (Flotante)
+            if (postVM.imageFile != null)
+              Positioned(
+                top: 15,
+                right: 15,
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  child: const Icon(Icons.edit_rounded, color: Colors.white, size: 20),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   Widget _buildSportsList(PostViewModel postVM) {
     return SizedBox(
@@ -165,13 +270,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             style: TextStyle(color: Colors.grey[500], fontSize: 14))
         : ListView.builder(
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
             itemCount: postVM.userSports.length,
             itemBuilder: (context, index) {
               final sport = postVM.userSports[index];
               return _buildSelectableChip(
                 label: sport,
                 isSelected: _selectedSport == sport,
-                onSelected: (val) => setState(() => _selectedSport = sport),
+                onTap: () => setState(() => _selectedSport = sport),
               );
             },
           ),
@@ -183,11 +289,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       height: 45,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
         itemCount: _levels.length,
         itemBuilder: (context, index) => _buildSelectableChip(
           label: _levels[index],
           isSelected: _selectedLevel == _levels[index],
-          onSelected: (val) => setState(() => _selectedLevel = _levels[index]),
+          onTap: () => setState(() => _selectedLevel = _levels[index]),
         ),
       ),
     );
@@ -196,21 +303,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget _buildDescriptionField() {
     return TextField(
       controller: _descriptionController,
-      maxLines: 3,
-      style: const TextStyle(fontSize: 16),
+      maxLines: 4,
+      style: TextStyle(fontSize: 16, color: colorVerdeBosque),
       decoration: InputDecoration(
-        hintText: "Escribe algo motivador...",
+        hintText: "Cuéntanos cómo ha ido hoy...",
         hintStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.all(16),
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(20),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Colors.grey[100]!),
         ),
       ),
     );
@@ -218,32 +325,48 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Widget _sectionTitle(String title) {
     return Text(title, 
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87));
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: colorVerdeBosque));
   }
 
-  Widget _buildSelectableChip({required String label, required bool isSelected, required Function(bool) onSelected}) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: onSelected,
-        selectedColor: Colors.black,
-        backgroundColor: Colors.grey[100],
-        labelStyle: TextStyle(
-          color: isSelected ? fitCrewGreen : Colors.grey[600],
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  Widget _buildSelectableChip({required String label, required bool isSelected, required Function() onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? colorVerdeBosque : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: isSelected 
+            ? [BoxShadow(color: colorVerdeBosque.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
+            : [],
+          border: Border.all(
+            color: isSelected ? colorVerdeBosque : Colors.grey[200]!,
+            width: 1.5,
+          ),
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide.none,
-        showCheckmark: false,
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey[600],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: colorVerdeBosque,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      ),
     );
   }
 }

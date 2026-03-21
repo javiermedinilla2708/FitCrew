@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:fitcrew/services/auth_services.dart';
-import 'package:fitcrew/services/post_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/post.dart';
+import 'package:fitcrew/services/auth_services.dart';
+import 'package:fitcrew/services/post_service.dart';
 
 class PostViewModel extends ChangeNotifier {
   // Inyectamos los servicios
@@ -28,7 +28,6 @@ class PostViewModel extends ChangeNotifier {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // Delegamos la carga de datos al AuthService que ya tiene el método
     _userSports = await _authService.getUserSports(uid);
     notifyListeners();
   }
@@ -73,18 +72,32 @@ class PostViewModel extends ChangeNotifier {
         sportType: sportType,
         description: description,
         imageUrl: _base64Image,
-        date: DateTime.now(), // El servicio lo cambiará por ServerTimestamp
+        date: DateTime.now(),
         level: level,
       );
 
-      // Usamos el servicio en lugar de llamar a Firestore aquí
       await _postService.createPost(newPost);
-
-      // Limpiar datos tras éxito
       _resetData();
       return true;
     } catch (e) {
-      print("Error en PostViewModel: $e");
+      debugPrint("Error en uploadPost: $e");
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // --- NUEVA FUNCIÓN: ELIMINAR POST ---
+  Future<bool> deletePost(String postId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _postService.deletePost(postId);
+      return true;
+    } catch (e) {
+      debugPrint("Error al eliminar post en ViewModel: $e");
       return false;
     } finally {
       _isLoading = false;
@@ -95,5 +108,6 @@ class PostViewModel extends ChangeNotifier {
   void _resetData() {
     _imageFile = null;
     _base64Image = null;
+    notifyListeners();
   }
 }

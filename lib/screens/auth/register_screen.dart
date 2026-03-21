@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/screens/filters/sport_filter.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
+import 'dart:ui';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,14 +19,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isPasswordVisible = false;
 
-  // --- LÓGICA DE VALIDACIÓN ---
+  // --- COLORES DE IDENTIDAD ---
+  final colorVerdeBosque = const Color(0xFF234D41);
+  final colorVerdeMenta = const Color(0xFFD3E6DB);
+  final colorTextoTitulo = const Color(0xFF0F1D19);
+
   bool _isEmailValid(String email) {
-    return RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
+    return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
   }
 
-  // --- LÓGICA DE REGISTRO COORDINADA ---
   Future<void> _handleRegister() async {
     final authVM = context.read<AuthViewModel>();
     final name = _nameController.text.trim();
@@ -33,7 +35,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    // Validaciones locales rápidas
     if (email.isEmpty || password.isEmpty || name.isEmpty) {
       _showSnackBar("Por favor, rellena todos los campos");
       return;
@@ -54,7 +55,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Ejecución en el ViewModel
     final success = await authVM.register(email, password, name);
 
     if (success && mounted) {
@@ -70,7 +70,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: colorVerdeBosque,
+      ),
     );
   }
 
@@ -87,143 +91,131 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthViewModel>().isLoading;
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            // Círculo decorativo
-            Positioned(
-              top: -50,
-              right: -180,
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF24FF8F).withOpacity(0.40),
-                      Colors.white.withOpacity(0),
-                    ],
-                  ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildBackButton(context),
+                    const SizedBox(height: 30),
+                    
+                    Text("Únete a",
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: colorTextoTitulo.withOpacity(0.7))),
+                    Text("FitCrew",
+                        style: TextStyle(fontSize: 40, color: colorVerdeBosque, fontWeight: FontWeight.w900, letterSpacing: -1)),
+                    
+                    const SizedBox(height: 12),
+                    Text(
+                      "Crea tu cuenta para empezar tu nueva aventura con nosotros.",
+                      style: TextStyle(color: Colors.black54, fontSize: 16, height: 1.4),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Inputs
+                    _buildInputLabel("Nombre de usuario"),
+                    _buildCustomTextField(
+                      controller: _nameController,
+                      hint: "Tu nombre",
+                      icon: Icons.person_outline_rounded,
+                      enabled: !isLoading,
+                    ),
+
+                    const SizedBox(height: 20),
+                    _buildInputLabel("Email"),
+                    _buildCustomTextField(
+                      controller: _emailController,
+                      hint: "hola@fitcrew.com",
+                      icon: Icons.alternate_email_rounded,
+                      keyboardType: TextInputType.emailAddress,
+                      enabled: !isLoading,
+                    ),
+
+                    const SizedBox(height: 20),
+                    _buildInputLabel("Contraseña"),
+                    _buildCustomTextField(
+                      controller: _passwordController,
+                      hint: "Crea tu contraseña",
+                      icon: Icons.lock_outline_rounded,
+                      obscureText: !_isPasswordVisible,
+                      enabled: !isLoading,
+                      suffixIcon: IconButton(
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    _buildInputLabel("Confirmar contraseña"),
+                    _buildCustomTextField(
+                      controller: _confirmPasswordController,
+                      hint: "Repetir contraseña",
+                      icon: Icons.lock_clock,
+                      obscureText: !_isPasswordVisible,
+                      action: TextInputAction.done,
+                      enabled: !isLoading,
+                      suffixIcon: IconButton(
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+                    
+                    // Botón de Continuar
+                    _buildRegisterButton(isLoading),
+                    const SizedBox(height: 30),
+                  ],
                 ),
               ),
             ),
-            
-            SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 30.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: const Icon(Icons.arrow_back, size: 20, color: Colors.black),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 30),
-                      const Text("Únete a", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                      const Text("FitCrew", style: TextStyle(fontSize: 28, color: Color(0xFF24FF8F), fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Crea tu cuenta para empezar tu nueva aventura con nosotros.",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 15, height: 1.5),
-                      ),
-
-                      const SizedBox(height: 40),
-                      _buildInputLabel("Nombre Completo"),
-                      _buildCustomTextField(
-                        controller: _nameController,
-                        hint: "Tu nombre",
-                        icon: Icons.person_outline,
-                        enabled: !isLoading,
-                      ),
-
-                      const SizedBox(height: 20),
-                      _buildInputLabel("Email"),
-                      _buildCustomTextField(
-                        controller: _emailController,
-                        hint: "hola@ejemplo.com",
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        enabled: !isLoading,
-                      ),
-
-                      const SizedBox(height: 20),
-                      _buildInputLabel("Contraseña"),
-                      _buildCustomTextField(
-                        controller: _passwordController,
-                        hint: "Crea tu contraseña",
-                        icon: Icons.lock_outline,
-                        obscureText: !_isPasswordVisible,
-                        enabled: !isLoading,
-                        suffixIcon: IconButton(
-                          icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-                          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      _buildInputLabel("Confirmar contraseña"),
-                      _buildCustomTextField(
-                        controller: _confirmPasswordController,
-                        hint: "Repetir contraseña",
-                        icon: Icons.lock_outline,
-                        obscureText: !_isPasswordVisible,
-                        action: TextInputAction.done,
-                        enabled: !isLoading,
-                        suffixIcon: IconButton(
-                          icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-                          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : _handleRegister,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF24FF8F),
-                            shape: const StadiumBorder(),
-                            elevation: 0,
-                          ),
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
-                                )
-                              : const Text("Continuar",
-                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // --- MÉTODOS DE UI ---
-  Widget _buildInputLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+  // --- WIDGETS DE APOYO ---
+
+ 
+
+  Widget _buildBackButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: colorVerdeMenta.withOpacity(0.3),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: colorVerdeBosque),
+      ),
+    );
+  }
+
+  Widget _buildRegisterButton(bool isLoading) {
+    return SizedBox(
+      width: double.infinity,
+      height: 70,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleRegister,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorVerdeBosque,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+            : const Text("Continuar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 
@@ -243,26 +235,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
       enabled: enabled,
       keyboardType: keyboardType,
       textInputAction: action,
+      style: const TextStyle(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+        prefixIcon: Icon(icon, color: colorVerdeBosque.withOpacity(0.4), size: 22),
         suffixIcon: suffixIcon,
         hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: enabled ? Colors.grey[50] : Colors.grey[200],
-        contentPadding: const EdgeInsets.symmetric(vertical: 18),
+        fillColor: colorVerdeMenta.withOpacity(0.1),
+        contentPadding: const EdgeInsets.symmetric(vertical: 20),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.transparent),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFF24FF8F), width: 1.5),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: colorVerdeBosque.withOpacity(0.2), width: 2),
         ),
       ),
+    );
+  }
+
+  Widget _buildInputLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: colorTextoTitulo)),
     );
   }
 }

@@ -1,202 +1,124 @@
-// 1. IMPORTACIONES
-import 'package:fitcrew/screens/login/login_screen.dart';
-import 'package:fitcrew/screens/login/register_screen.dart';
+import 'package:fitcrew/screens/auth/login_screen.dart';
+import 'package:fitcrew/screens/auth/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 
-// 2. WIDGET DE PANTALLA DE BIENVENIDA 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const Color fitCrewGreen = Color(0xFF24FF8F);
+    // ----------------------------------------------------------------------
+    // 1. PALETA DE COLORES
+    // ----------------------------------------------------------------------
+    const colorVerdeFondo = Color(0xFFE8F3ED);
+    const colorVerdeBurbuja = Color(0xFFD3E6DB);
+    const colorVerdePrimario = Color(0xFF234D41);
+    const colorTextoTitulo = Color(0xFF0F1D19);
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // 3. CAPAS DECORATIVAS DE FONDO 
-          Positioned(
-            top: -80,
-            right: -120,
-            child: _buildBlurCircle(fitCrewGreen.withOpacity(0.35), 450),
-          ),
+          // ------------------------------------------------------------------
+          // 2. CAPAS DECORATIVAS (Blobs Difuminados + Burbujas Definidas)
+          // ------------------------------------------------------------------
+          _buildBackgroundDecorations(colorVerdeFondo, colorVerdeBurbuja, colorVerdePrimario),
 
-          Positioned(
-            top: 130,
-            right: 100,
-            child: _buildFloatingCircle(const Color(0xFFF8F9FA), 120, 10),
-          ),
-
-          Positioned(
-            top: 250,
-            left: -50,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: fitCrewGreen.withOpacity(0.04),
-              ),
-            ),
-          ),
-
-          Positioned(
-            bottom: -110,
-            left: -90,
-            child: _buildBlurCircle(fitCrewGreen.withOpacity(0.1), 380),
-          ),
-
-          Positioned(
-            bottom: 250,
-            left: 50,
-            child: _buildFloatingCircle(const Color(0xFFF1F3F5), 85, 6),
-          ),
-
-          Positioned(
-            bottom: 130,
-            right: -30,
-            child: _buildFloatingCircle(fitCrewGreen.withOpacity(0.6), 170, 18),
-          ),
-
-          Positioned(
-            bottom: 60,
-            right: 80,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFE9ECEF),
-              ),
-            ),
-          ),
-
-          // 4. CONTENIDO PRINCIPAL ANIMADO 
+          // ------------------------------------------------------------------
+          // 3. CONTENIDO PRINCIPAL CON ANIMACIÓN DE ENTRADA
+          // ------------------------------------------------------------------
           TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 2200), 
-            tween: Tween(begin: 0.0, end: 1.0), 
-            curve: Curves.easeOutCubic, 
+            duration: const Duration(milliseconds: 1000),
+            tween: Tween(begin: 0.0, end: 1.0),
+            curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               return Opacity(
                 opacity: value,
                 child: Transform.translate(
-                  offset: Offset(0, 30 * (1 - value)), 
+                  offset: Offset(0, 30 * (1 - value)),
                   child: child,
                 ),
               );
             },
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 90),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      "¡Bienvenido\nde Nuevo!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1A1A1A),
-                        letterSpacing: -1.2,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
+            child: _buildMainContent(context, colorTextoTitulo, colorVerdePrimario),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  const SizedBox(height: 100),
+  // ----------------------------------------------------------------------
+  // SEGMENTO: DECORACIÓN DE FONDO
+  // ----------------------------------------------------------------------
+  Widget _buildBackgroundDecorations(Color fondo, Color burbuja, Color primario) {
+    return Stack(
+      children: [
+        // --- BLOBS DIFUMINADOS (Estilo foto) ---
+        Positioned(top: -50, right: -30, child: _buildBlurCircle(fondo, 400)),
+        Positioned(top: 280, left: -100, child: _buildBlurCircle(burbuja.withOpacity(0.4), 300)),
+        Positioned(bottom: 220, left: 30, child: _buildBlurCircle(burbuja.withOpacity(0.6), 180)),
+        Positioned(bottom: 80, right: -40, child: _buildBlurCircle(burbuja, 280)),
 
-                  // 5. SECCIÓN INFERIOR: INFORMACIÓN Y ACCIONES
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 20.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            "Entrena con tu Crew",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            "Ingresa tus datos personales para acceder a tu cuenta y ver tus actividades.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 16,
-                              height: 1.4,
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 200),
+        // --- BURBUJAS FLOTANTES (Definidas) ---
+        _buildFloatingBubble(top: 120, left: 40, size: 120, color: primario.withOpacity(0.1)),
+        _buildFloatingBubble(top: 400, right: 30, size: 40, color: burbuja),
+        _buildFloatingBubble(bottom: 300, right: 80, size: 60, color: primario.withOpacity(0.05)),
+        _buildFloatingBubble(bottom: 150, left: 20, size: 120, color: burbuja.withOpacity(0.8)),
+      ],
+    );
+  }
 
-                          // 6. FILA DE BOTONES (ENTRAR Y REGISTRARSE)
-                          Row(
-                            children: [
-                              // Botón de acceso
-                              Expanded( 
-                                child: SizedBox(
-                                  height: 60,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pushReplacement(
-                                        context, 
-                                        MaterialPageRoute(builder: (context) => const LoginScreen())
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                      foregroundColor: Colors.white,
-                                      shape: const StadiumBorder(),
-                                      elevation: 0,
-                                    ),
-                                    child: const Text(
-                                      "Entrar",
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                              ),
+  // ----------------------------------------------------------------------
+  // SEGMENTO: CONTENIDO
+  // ----------------------------------------------------------------------
+  Widget _buildMainContent(BuildContext context, Color tituloC, Color primario) {
+    return SafeArea(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          _buildLogo(primario),
+          const SizedBox(height: 20),
+          _buildTextSection("Tu cuerpo,\ntu equipo.", tituloC, 48, FontWeight.w900),
+          const Spacer(),
+          _buildBottomSection(tituloC),
+          const SizedBox(height: 50),
+          _buildActionButtons(context, primario),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
 
-                              const SizedBox(width: 15),
+  // ----------------------------------------------------------------------
+  // COMPONENTES INDIVIDUALES
+  // ----------------------------------------------------------------------
+  Widget _buildLogo(Color primario) {
+    return Text(
+      "FITCREW",
+      style: TextStyle(
+        color: primario.withOpacity(0.5),
+        fontWeight: FontWeight.w800,
+        letterSpacing: 4,
+        fontSize: 14,
+      ),
+    );
+  }
 
-                              // Botón de Registro 
-                              Expanded(
-                                child: SizedBox(
-                                  height: 60,
-                                  child: OutlinedButton(
-                                    onPressed: () {
-                                      Navigator.push(context, MaterialPageRoute(builder: (context)=>const RegisterScreen()));
-                                    }, 
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: Colors.black12, width: 2),
-                                      shape: const StadiumBorder(),
-                                      foregroundColor: Colors.black,
-                                    ),
-                                    child: const Text(
-                                      "Registrarse",
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildBottomSection(Color tituloC) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        children: [
+          _buildTextSection("Alcanza tu máximo\npotencial", tituloC, 28, FontWeight.bold),
+          const SizedBox(height: 15),
+          Text(
+            "Únete a la comunidad de entrenamiento más exclusiva y lleva un registro profesional de tus progresos.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.black.withOpacity(0.5),
+              fontSize: 17,
+              height: 1.3,
             ),
           ),
         ],
@@ -204,9 +126,77 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  // --- MÉTODOS AUXILIARES PARA WIDGETS DECORATIVOS ---
+  Widget _buildActionButtons(BuildContext context, Color primario) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildButton(
+              label: "Entrar",
+              color: primario,
+              textColor: Colors.white,
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: _buildButton(
+              label: "Registrarse",
+              color: Colors.transparent,
+              textColor: primario,
+              isOutlined: true,
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen())),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  // Constructor de círculos con degradado radial
+  // ----------------------------------------------------------------------
+  // HELPERS DE DISEÑO
+  // ----------------------------------------------------------------------
+  Widget _buildTextSection(String text, Color color, double size, FontWeight weight) {
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        height: 1.1,
+        letterSpacing: -1,
+      ),
+    );
+  }
+
+  Widget _buildButton({required String label, required Color color, required Color textColor, bool isOutlined = false, required VoidCallback onPressed}) {
+    return SizedBox(
+      height: 75,
+      child: isOutlined
+          ? OutlinedButton(
+              onPressed: onPressed,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                foregroundColor: textColor,
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            )
+          : ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: textColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+    );
+  }
+
   Widget _buildBlurCircle(Color color, double size) {
     return Container(
       width: size,
@@ -214,27 +204,30 @@ class WelcomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color, Colors.white.withOpacity(0)],
+          colors: [color, color.withOpacity(0)],
+          stops: const [0.5, 1.0],
         ),
       ),
     );
   }
 
-  // Constructor de esferas sólidas con sombra proyectada
-  Widget _buildFloatingCircle(Color color, double size, double elevation) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: elevation,
-            offset: Offset(0, elevation / 2),
-          ),
-        ],
+  Widget _buildFloatingBubble({double? top, double? left, double? right, double? bottom, required double size, required Color color}) {
+    return Positioned(
+      top: top, left: left, right: right, bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            )
+          ],
+        ),
       ),
     );
   }

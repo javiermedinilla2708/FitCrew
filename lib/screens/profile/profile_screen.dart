@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fitcrew/screens/login/login_screen.dart';
+import 'package:fitcrew/screens/welcome/welcome_screen.dart';
+import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   final List<String> userSports;
@@ -17,21 +18,24 @@ class ProfileScreen extends StatelessWidget {
     required this.userName,
   });
 
+  // --- NUEVA PALETA DE COLORES ---
+  final Color colorVerdeBosque = const Color(0xFF234D41);
+  final Color colorVerdeMenta = const Color(0xFFD3E6DB);
+  final Color colorFondoFrio = const Color(0xFFFBFDFA);
+
   @override
   Widget build(BuildContext context) {
-    const Color fitCrewGreen = Color(0xFF24FF8F);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFB),
+      backgroundColor: colorFondoFrio,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: colorFondoFrio,
+        surfaceTintColor: colorFondoFrio,
         elevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           "Mi Perfil",
           style: TextStyle(
-            color: Colors.black,
+            color: colorVerdeBosque,
             fontWeight: FontWeight.bold,
             fontSize: 26,
             letterSpacing: -1,
@@ -39,7 +43,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz_rounded, color: Colors.black, size: 28),
+            icon: Icon(Icons.more_horiz_rounded, color: colorVerdeBosque, size: 28),
             onPressed: () => _showSettingsMenu(context),
           ),
         ],
@@ -49,11 +53,11 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            _buildHeader(fitCrewGreen),
+            _buildHeader(colorVerdeBosque),
             const SizedBox(height: 30),
             _buildStatsGrid(),
             const SizedBox(height: 25),
-            _buildPerformanceDashboard(fitCrewGreen),
+            _buildPerformanceDashboard(colorVerdeBosque),
             const SizedBox(height: 35),
             _buildPostSection(),
             const SizedBox(height: 120),
@@ -101,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         Text(
                           userName,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque),
                         ),
                         Text(
                           userEmail,
@@ -137,15 +141,21 @@ class ProfileScreen extends StatelessWidget {
               const Divider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.logout_rounded, color: Colors.orange),
+                leading: const Icon(Icons.logout_rounded, color: Color(0xFF234D41)),
                 title: const Text("Cerrar Sesión", style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () => _handleLogout(context),
+                onTap: () {
+                  Navigator.pop(context); // Cierra el BottomSheet
+                  _showLogoutDialog(context);
+                },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-                title: const Text("Eliminar Cuenta", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
-                onTap: () => _handleDeleteAccount(context),
+                leading: const Icon(Icons.delete_forever_outlined, color: Color(0xFF234D41)),
+                title: const Text("Eliminar Cuenta", style: TextStyle(color: Color(0xFF234D41), fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(context); // Cierra el BottomSheet
+                  _handleDeleteAccount(context);
+                },
               ),
               const SizedBox(height: 30),
             ],
@@ -166,12 +176,12 @@ class ProfileScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: colorVerdeMenta.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: Colors.black, size: 22),
+        child: Icon(icon, color: colorVerdeBosque, size: 22),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colorVerdeBosque)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
       onTap: onTap,
@@ -190,11 +200,7 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [color, Colors.blueAccent],
-                ),
+                border: Border.all(color: colorVerdeMenta, width: 2),
               ),
               child: const CircleAvatar(
                 radius: 55,
@@ -208,13 +214,13 @@ class ProfileScreen extends StatelessWidget {
             ),
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: colorVerdeBosque, shape: BoxShape.circle),
               child: const Icon(Icons.edit, color: Colors.white, size: 16),
             )
           ],
         ),
         const SizedBox(height: 20),
-        Text(userName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+        Text(userName, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: colorVerdeBosque)),
         const Text("Miembro Elite de FitCrew", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
       ],
     );
@@ -242,11 +248,11 @@ class ProfileScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: colorVerdeBosque.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
             Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
           ],
         ),
@@ -265,7 +271,7 @@ class ProfileScreen extends StatelessWidget {
             child: _cardWrapper(
               child: Column(
                 children: [
-                  const Text("Entrenos", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text("Entrenos", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorVerdeBosque)),
                   const SizedBox(height: 15),
                   Stack(
                     alignment: Alignment.center,
@@ -275,11 +281,11 @@ class ProfileScreen extends StatelessWidget {
                         child: CircularProgressIndicator(
                           value: 0.75,
                           strokeWidth: 7,
-                          backgroundColor: color.withOpacity(0.15),
+                          backgroundColor: colorVerdeMenta.withOpacity(0.3),
                           valueColor: AlwaysStoppedAnimation<Color>(color),
                         ),
                       ),
-                      const Text("24", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text("24", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -289,7 +295,6 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // --- SECCIÓN DE DEPORTES REACTIVA ---
           Expanded(
             flex: 6,
             child: _cardWrapper(
@@ -297,7 +302,7 @@ class ProfileScreen extends StatelessWidget {
                 stream: FirebaseFirestore.instance
                     .collection('users')
                     .doc(FirebaseAuth.instance.currentUser?.uid)
-                    .snapshots(), // Escucha cambios en tiempo real
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SizedBox(
@@ -306,19 +311,17 @@ class ProfileScreen extends StatelessWidget {
                     );
                   }
 
-                  // Extraemos la lista de la clave 'favoriteSports'
                   final data = snapshot.data?.data() as Map<String, dynamic>?;
                   final List<dynamic> sportsData = data?['favoriteSports'] ?? [];
                   
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Mis Deportes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text("Mis Deportes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorVerdeBosque)),
                       const SizedBox(height: 12),
                       if (sportsData.isEmpty)
                         const Text("Sin deportes aún", style: TextStyle(color: Colors.grey, fontSize: 12))
                       else
-                        // Mostramos los primeros 3 deportes guardados
                         ...sportsData.take(3).map((sport) => _buildSportLevelBar(sport.toString(), color)),
                     ],
                   );
@@ -337,7 +340,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: colorVerdeBosque.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 5))],
       ),
       child: child,
     );
@@ -351,7 +354,7 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(sport, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(sport, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
               const Text("Nvl. 4", style: TextStyle(fontSize: 10, color: Colors.grey)),
             ],
           ),
@@ -361,7 +364,7 @@ class ProfileScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: 0.6,
               minHeight: 5,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: colorVerdeMenta.withOpacity(0.3),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
@@ -371,142 +374,206 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildPostSection() {
-  final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 25),
-        child: Text("Mis Logros", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      ),
-      const SizedBox(height: 15),
-      StreamBuilder<QuerySnapshot>(
-        // Filtramos para que el usuario solo vea SUS propios posts
-        stream: FirebaseFirestore.instance
-            .collection('posts')
-            .where('userId', isEqualTo: uid)
-            .orderBy('date', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Text("Mis Logros", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
+        ),
+        const SizedBox(height: 15),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('posts')
+              .where('userId', isEqualTo: uid)
+              .orderBy('date', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyPostsState();
-          }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return _buildEmptyPostsState();
+            }
 
-          final posts = snapshot.data!.docs;
+            final posts = snapshot.data!.docs;
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  final postData = posts[index].data() as Map<String, dynamic>;
+                  final String base64String = postData['imageUrl'] ?? "";
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: colorVerdeMenta.withOpacity(0.2),
+                      image: base64String.isNotEmpty
+                          ? DecorationImage(
+                              image: MemoryImage(base64Decode(base64String)),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                  );
+                },
               ),
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final postData = posts[index].data() as Map<String, dynamic>;
-                final String base64String = postData['imageUrl'] ?? "";
+            );
+          },
+        ),
+      ],
+    );
+  }
 
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[200],
-                    image: base64String.isNotEmpty
-                        ? DecorationImage(
-                            // Decodificamos el Base64 almacenado
-                            image: MemoryImage(base64Decode(base64String)),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                );
-              },
-            ),
-          );
-        },
+  Widget _buildEmptyPostsState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            Icon(Icons.camera_alt_outlined, size: 50, color: colorVerdeMenta),
+            const SizedBox(height: 10),
+            const Text("Aún no has compartido ningún logro", 
+              style: TextStyle(color: Colors.grey, fontSize: 14)),
+          ],
+        ),
       ),
-    ],
-  );
-}
+    );
+  }
 
-// Un estado elegante por si el usuario aún no ha publicado nada
-Widget _buildEmptyPostsState() {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Icon(Icons.camera_alt_outlined, size: 50, color: Colors.grey[300]),
-          const SizedBox(height: 10),
-          const Text("Aún no has compartido ningún logro", 
-            style: TextStyle(color: Colors.grey, fontSize: 14)),
-        ],
-      ),
-    ),
-  );
-}
+  // --- LÓGICA DE AUTENTICACIÓN ---
 
-  // --- LÓGICA DE FIREBASE ---
-
-  void _handleLogout(BuildContext context) async {
+  Future<void> _handleLogout(NavigatorState navigator, AuthViewModel authVM) async {
     try {
-      await FirebaseAuth.instance.signOut();
-      if (context.mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-        );
-      }
+      await authVM.logout();
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
+        (route) => false, 
+      );
     } catch (e) {
       debugPrint("Error al cerrar sesión: $e");
     }
   }
 
+  void _showLogoutDialog(BuildContext context) {
+    // Obtenemos las referencias antes del showDialog
+    final navigator = Navigator.of(context);
+    final authVM = Provider.of<AuthViewModel>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          title: Text(
+            "¿Cerrar sesión?",
+            style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "¿Estás seguro de que quieres salir de tu cuenta de FitCrew?",
+            style: TextStyle(color: Colors.grey),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx); // Cierra el diálogo
+                _handleLogout(navigator, authVM);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorVerdeBosque,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Cerrar Sesión",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _handleDeleteAccount(BuildContext context) {
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authVM = Provider.of<AuthViewModel>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("¿Borrar cuenta?"),
-        content: const Text("Perderás todo tu progreso. Esta acción no se puede deshacer."),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFF234D41), size: 28),
+            const SizedBox(width: 10),
+            Text(
+              "¿Borrar cuenta?", 
+              style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.bold)
+            ),
+          ],
+        ),
+        content: const Text(
+          "Esta acción es irreversible. Se borrarán tus posts y progreso en FitCrew. ¿Estás seguro?",
+          style: TextStyle(color: Colors.grey),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
           TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Cancelar", style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorVerdeBosque,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
-              try {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user != null) {
-                  // Borrar de Firestore
-                  await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
-                  // Borrar de Auth
-                  await user.delete();
-                  
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const LoginScreen()), 
-                      (route) => false
-                    );
-                  }
-                }
-              } catch (e) {
-                // Si da error de "requires-recent-login", podrías pedir re-autenticación aquí
-                debugPrint("Error al borrar cuenta: $e");
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Por seguridad, inicia sesión de nuevo antes de borrar tu cuenta."))
-                  );
-                }
+              Navigator.pop(ctx);
+              bool success = await authVM.deleteAccount();
+
+              if (success) {
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
+                  (route) => false
+                );
+              } else {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(authVM.errorMessage ?? "Error al eliminar la cuenta"),
+                    backgroundColor: colorVerdeBosque,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
               }
             },
-            child: const Text("CONFIRMAR", style: TextStyle(color: Colors.red)),
+            child: const Text(
+              "ELIMINAR TODO", 
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+            ),
           ),
         ],
       ),

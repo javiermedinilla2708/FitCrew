@@ -4,14 +4,32 @@ import 'package:fitcrew/models/post.dart';
 class PostService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Subir un post a Firestore
+  // --- CREAR POST ---
   Future<void> createPost(Post post) async {
     Map<String, dynamic> postMap = post.toMap();
-    // Usamos serverTimestamp para consistencia global
     postMap['date'] = FieldValue.serverTimestamp();
     
     await _db.collection('posts').doc(post.id).set(postMap);
   }
 
-  // Podrías añadir aquí: deletePost, likePost, etc.
+  // --- ELIMINAR POST ---
+  Future<void> deletePost(String postId) async {
+    final postRef = _db.collection('posts').doc(postId);
+    
+    WriteBatch batch = _db.batch();
+
+    final likes = await postRef.collection('likes').get();
+    for (var doc in likes.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final comments = await postRef.collection('comments').get();
+    for (var doc in comments.docs) {
+      batch.delete(doc.reference);
+    }
+
+    batch.delete(postRef);
+
+    await batch.commit();
+  }
 }
