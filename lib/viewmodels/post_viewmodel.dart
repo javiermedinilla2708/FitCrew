@@ -1,27 +1,44 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fitcrew/models/post.dart';
+import 'package:fitcrew/services/auth_services.dart';
+import 'package:fitcrew/services/post_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/models/post.dart';
 
 class PostViewModel extends ChangeNotifier {
+  // Inyectamos los servicios
+  final PostService _postService = PostService();
+  final AuthService _authService = AuthService();
+
   File? _imageFile;
   String? _base64Image;
   bool _isLoading = false;
+  List<String> _userSports = [];
 
+  // Getters
   File? get imageFile => _imageFile;
   bool get isLoading => _isLoading;
+  List<String> get userSports => _userSports;
 
-  // Seleccionar imagen de la galería
+  // --- CARGAR DEPORTES ---
+  Future<void> loadUserSports() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    // Delegamos la carga de datos al AuthService que ya tiene el método
+    _userSports = await _authService.getUserSports(uid);
+    notifyListeners();
+  }
+
+  // --- SELECCIONAR IMAGEN ---
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800, // Importante para no exceder 1MB en Firestore
+      maxWidth: 800,
       imageQuality: 50,
     );
 
@@ -33,7 +50,7 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // Publicar en Firestore
+  // --- PUBLICAR POST ---
   Future<bool> uploadPost({
     required String description,
     required String sportType,
@@ -46,9 +63,7 @@ class PostViewModel extends ChangeNotifier {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      // CORRECCIÓN: Uuid() no puede ser const
-      var uuid = const Uuid(); 
-      final String postId = uuid.v4();
+      final String postId = const Uuid().v4();
 
       final newPost = Post(
         id: postId,
@@ -58,26 +73,27 @@ class PostViewModel extends ChangeNotifier {
         sportType: sportType,
         description: description,
         imageUrl: _base64Image,
-        date: DateTime.now(),
+        date: DateTime.now(), // El servicio lo cambiará por ServerTimestamp
         level: level,
       );
-      Map<String, dynamic> postMap = newPost.toMap();
-      postMap['date'] = FieldValue.serverTimestamp();
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .set(postMap);
+
+      // Usamos el servicio en lugar de llamar a Firestore aquí
+      await _postService.createPost(newPost);
 
       // Limpiar datos tras éxito
-      _imageFile = null;
-      _base64Image = null;
+      _resetData();
       return true;
     } catch (e) {
-      print("Error en uploadPost: $e");
+      print("Error en PostViewModel: $e");
       return false;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void _resetData() {
+    _imageFile = null;
+    _base64Image = null;
   }
 }

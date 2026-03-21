@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitcrew/screens/login/login_screen.dart';
@@ -36,7 +38,6 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          // Botón de 3 puntos que activa el menú superpuesto
           IconButton(
             icon: const Icon(Icons.more_horiz_rounded, color: Colors.black, size: 28),
             onPressed: () => _showSettingsMenu(context),
@@ -62,13 +63,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- NUEVO: MENÚ DE GESTIÓN (BOTTOM SHEET) ---
-  // Este menú se superpone a todo, incluyendo el BottomNav
+  // --- MENÚ DE GESTIÓN (BOTTOM SHEET) ---
   void _showSettingsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, // Permite ver el redondeo del contenedor
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
           decoration: const BoxDecoration(
@@ -79,7 +79,6 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Indicador de arrastre
               Container(
                 width: 45,
                 height: 5,
@@ -89,8 +88,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 25),
-              
-              // SECCIÓN 1: DATOS DEL USUARIO
               Row(
                 children: [
                   const CircleAvatar(
@@ -118,16 +115,11 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 25),
               const Divider(),
-
-              // SECCIÓN 2: GESTIÓN Y PRIVACIDAD
               _buildMenuOption(
                 icon: Icons.lock_person_outlined,
                 title: "Privacidad",
                 subtitle: "Perfil público, bloqueos y visibilidad",
-                onTap: () {
-                  // Lógica para gestionar privacidad
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context),
               ),
               _buildMenuOption(
                 icon: Icons.shield_outlined,
@@ -141,11 +133,8 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: "Unidades de medida y notificaciones",
                 onTap: () => Navigator.pop(context),
               ),
-              
               const SizedBox(height: 10),
               const Divider(),
-              
-              // SECCIÓN 3: ACCIONES CRÍTICAS
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.logout_rounded, color: Colors.orange),
@@ -189,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- MÉTODOS DE LA INTERFAZ ORIGINAL ---
+  // --- WIDGETS DE INTERFAZ ---
 
   Widget _buildHeader(Color color) {
     return Column(
@@ -300,19 +289,40 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
+          // --- SECCIÓN DE DEPORTES REACTIVA ---
           Expanded(
             flex: 6,
             child: _cardWrapper(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Mis Deportes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 12),
-                  if (userSports.isEmpty)
-                    const Text("Sin deportes aún", style: TextStyle(color: Colors.grey, fontSize: 12))
-                  else
-                    ...userSports.take(3).map((sport) => _buildSportLevelBar(sport, color)),
-                ],
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(), // Escucha cambios en tiempo real
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  }
+
+                  // Extraemos la lista de la clave 'favoriteSports'
+                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+                  final List<dynamic> sportsData = data?['favoriteSports'] ?? [];
+                  
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Mis Deportes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 12),
+                      if (sportsData.isEmpty)
+                        const Text("Sin deportes aún", style: TextStyle(color: Colors.grey, fontSize: 12))
+                      else
+                        // Mostramos los primeros 3 deportes guardados
+                        ...sportsData.take(3).map((sport) => _buildSportLevelBar(sport.toString(), color)),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -361,51 +371,101 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildPostSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 25),
-          child: Text("Publicaciones", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(height: 15),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: 6,
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage("https://picsum.photos/seed/${index + 10}/200"),
-                    fit: BoxFit.cover,
+  final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 25),
+        child: Text("Mis Logros", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      ),
+      const SizedBox(height: 15),
+      StreamBuilder<QuerySnapshot>(
+        // Filtramos para que el usuario solo vea SUS propios posts
+        stream: FirebaseFirestore.instance
+            .collection('posts')
+            .where('userId', isEqualTo: uid)
+            .orderBy('date', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return _buildEmptyPostsState();
+          }
+
+          final posts = snapshot.data!.docs;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                final postData = posts[index].data() as Map<String, dynamic>;
+                final String base64String = postData['imageUrl'] ?? "";
+
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[200],
+                    image: base64String.isNotEmpty
+                        ? DecorationImage(
+                            // Decodificamos el Base64 almacenado
+                            image: MemoryImage(base64Decode(base64String)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+                );
+              },
+            ),
+          );
+        },
+      ),
+    ],
+  );
+}
+
+// Un estado elegante por si el usuario aún no ha publicado nada
+Widget _buildEmptyPostsState() {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          Icon(Icons.camera_alt_outlined, size: 50, color: Colors.grey[300]),
+          const SizedBox(height: 10),
+          const Text("Aún no has compartido ningún logro", 
+            style: TextStyle(color: Colors.grey, fontSize: 14)),
+        ],
+      ),
+    ),
+  );
+}
 
   // --- LÓGICA DE FIREBASE ---
 
   void _handleLogout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint("Error al cerrar sesión: $e");
     }
   }
 
@@ -420,12 +480,29 @@ class ProfileScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
           TextButton(
             onPressed: () async {
-              String? uid = FirebaseAuth.instance.currentUser?.uid;
-              if (uid != null) {
-                await FirebaseFirestore.instance.collection('users').doc(uid).delete();
-                await FirebaseAuth.instance.currentUser!.delete();
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  // Borrar de Firestore
+                  await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+                  // Borrar de Auth
+                  await user.delete();
+                  
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const LoginScreen()), 
+                      (route) => false
+                    );
+                  }
+                }
+              } catch (e) {
+                // Si da error de "requires-recent-login", podrías pedir re-autenticación aquí
+                debugPrint("Error al borrar cuenta: $e");
                 if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Por seguridad, inicia sesión de nuevo antes de borrar tu cuenta."))
+                  );
                 }
               }
             },

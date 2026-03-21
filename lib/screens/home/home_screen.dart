@@ -33,14 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- Lógica de Firebase ---
 
-  Future<void> _loadUserData() async {
-  if (user == null) {
-    print("DEBUG-FIT: No hay usuario autenticado.");
-    if (mounted) setState(() => _isLoading = false);
-    return;
-  }
-
-  print("DEBUG-FIT: Buscando UID: ${user!.uid}");
+  // --- Lógica de Firebase Optimizada ---
+Future<void> _loadUserData() async {
+  if (user == null) return;
 
   try {
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -48,26 +43,21 @@ class _HomeScreenState extends State<HomeScreen> {
         .doc(user!.uid)
         .get();
 
-    if (!userDoc.exists) {
-      print("DEBUG-FIT: ¡ERROR! El documento con ID ${user!.uid} NO EXISTE en la colección 'users'.");
-    } else {
+    if (userDoc.exists) {
       Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-      print("DEBUG-FIT: Datos encontrados: $data");
-
+      
       if (mounted) {
         setState(() {
-          // Cambia 'username' por el nombre exacto que veas en el print de arriba
-          _currentUserName = data['username'] ?? data['name'] ?? data['display_name'] ?? "Nombre no hallado";
-          _userSports = List<String>.from(data['selectedSports'] ?? []);
+          // Usamos 'name' y 'favoriteSports' para ser consistentes con el registro
+          _currentUserName = data['name'] ?? user?.displayName ?? "Usuario";
+          _userSports = List<String>.from(data['favoriteSports'] ?? []);
         });
       }
     }
   } catch (e) {
-    print("DEBUG-FIT: Excepción capturada: $e");
+    debugPrint("Error al cargar datos de usuario: $e");
   } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 }
 
@@ -336,36 +326,63 @@ class _HomeScreenState extends State<HomeScreen> {
   // 5. NAVEGACIÓN Y OTROS
   // ==========================================
 
-  Widget _buildBottomNav() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+ Widget _buildBottomNav() {
+  return SafeArea(
+    child: Container(
+      margin: const EdgeInsets.fromLTRB(25, 0, 25, 10),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(35),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: BottomAppBar(
-        height: 65,
-        color: Colors.white,
-        elevation: 10,
-        notchMargin: 8,
-        shape: const CircularNotchedRectangle(),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildNavItem(Icons.home_outlined, 0),
-            _buildNavItem(Icons.search, 1),
-            const SizedBox(width: 40),
-            _buildNavItem(Icons.calendar_today_rounded, 3),
-            _buildNavItem(Icons.person_outline, 4),
-          ],
+        height: 70,
+        color: Colors.transparent,
+        elevation: 0,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(Icons.home_filled, 0),
+              _buildNavItem(Icons.search, 1),
+              const SizedBox(width: 40), // Hueco para el FAB
+              _buildNavItem(Icons.calendar_month, 3),
+              _buildNavItem(Icons.person_rounded, 4),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildNavItem(IconData icon, int index) {
-    bool isSelected = _selectedIndex == index;
-    return IconButton(
-      icon: Icon(icon, color: isSelected ? fitCrewGreen : Colors.grey, size: isSelected ? 30 : 26),
-      onPressed: () => setState(() => _selectedIndex = index),
-    );
-  }
+Widget _buildNavItem(IconData icon, int index) {
+  bool isSelected = _selectedIndex == index;
+  return GestureDetector(
+    onTap: () => setState(() => _selectedIndex = index),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(10), // Espacio interno del círculo
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : Colors.transparent,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: isSelected ? Colors.black : Colors.grey[600],
+        size: isSelected ? 26 : 24,
+      ),
+    ),
+  );
+}
 
   Widget _buildOtherScreens() {
     return IndexedStack(
