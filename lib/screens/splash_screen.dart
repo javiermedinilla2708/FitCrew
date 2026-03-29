@@ -9,7 +9,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -54,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     return Scaffold(
       backgroundColor: colorPrimario,
-      body: Stack( 
+      body: Stack(
         children: [
           Positioned(
             top: -100,
@@ -65,10 +66,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    colorPrimario.withOpacity(0.3),
-                    Colors.transparent,
-                  ],
+                  colors: [colorPrimario.withOpacity(0.3), Colors.transparent],
                 ),
               ),
             ),
@@ -83,10 +81,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    colorAcento.withOpacity(0.15),
-                    Colors.transparent,
-                  ],
+                  colors: [colorAcento.withOpacity(0.15), Colors.transparent],
                 ),
               ),
             ),
@@ -115,7 +110,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   scale: _animation,
                   child: Column(
                     children: [
-                      Icon(Icons.fitness_center, color: colorMentol.withOpacity(0.2), size: 40),
+                      Icon(
+                        Icons.fitness_center,
+                        color: colorMentol.withOpacity(0.2),
+                        size: 40,
+                      ),
                       const SizedBox(height: 10),
                       RichText(
                         text: const TextSpan(
@@ -139,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 fontStyle: FontStyle.italic,
                                 letterSpacing: -2,
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -147,8 +146,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ),
                 ),
                 const SizedBox(height: 40),
-                
-                // Indicador de carga estilizado con "Glow"
+
+                // Indicador de carga
                 Container(
                   width: 140,
                   decoration: BoxDecoration(
@@ -157,8 +156,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         color: colorMentol.withOpacity(0.2),
                         blurRadius: 15,
                         spreadRadius: 1,
-                      )
-                    ]
+                      ),
+                    ],
                   ),
                   child: LinearProgressIndicator(
                     color: colorMentol,

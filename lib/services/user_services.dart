@@ -9,7 +9,7 @@ class UserService {
       'uid': uid,
       'name': name,
       'email': email,
-      'favoriteSports': [], // Mismo nombre que en el modelo
+      'favoriteSports': [],
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -27,6 +27,7 @@ class UserService {
   Future<void> updateFavoriteSports(String uid, List<String> sports) async {
     await _db.collection('users').doc(uid).update({'favoriteSports': sports});
   }
+
   // En UserService.dart
   Future<void> updateSetupComplete(String uid) async {
     await _db.collection('users').doc(uid).update({'setupComplete': true});

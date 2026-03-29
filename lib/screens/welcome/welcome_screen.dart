@@ -23,7 +23,11 @@ class WelcomeScreen extends StatelessWidget {
           // ------------------------------------------------------------------
           // 2. CAPAS DECORATIVAS (Blobs Difuminados + Burbujas Definidas)
           // ------------------------------------------------------------------
-          _buildBackgroundDecorations(colorVerdeFondo, colorVerdeBurbuja, colorVerdePrimario),
+          _buildBackgroundDecorations(
+            colorVerdeFondo,
+            colorVerdeBurbuja,
+            colorVerdePrimario,
+          ),
 
           // ------------------------------------------------------------------
           // 3. CONTENIDO PRINCIPAL CON ANIMACIÓN DE ENTRADA
@@ -41,7 +45,11 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               );
             },
-            child: _buildMainContent(context, colorTextoTitulo, colorVerdePrimario),
+            child: _buildMainContent(
+              context,
+              colorTextoTitulo,
+              colorVerdePrimario,
+            ),
           ),
         ],
       ),
@@ -51,20 +59,49 @@ class WelcomeScreen extends StatelessWidget {
   // ----------------------------------------------------------------------
   // SEGMENTO: DECORACIÓN DE FONDO
   // ----------------------------------------------------------------------
-  Widget _buildBackgroundDecorations(Color fondo, Color burbuja, Color primario) {
+  Widget _buildBackgroundDecorations(
+    Color fondo,
+    Color burbuja,
+    Color primario,
+  ) {
     return Stack(
       children: [
-        // --- BLOBS DIFUMINADOS (Estilo foto) ---
         Positioned(top: -50, right: -30, child: _buildBlurCircle(fondo, 400)),
-        Positioned(top: 280, left: -100, child: _buildBlurCircle(burbuja.withOpacity(0.4), 300)),
-        Positioned(bottom: 220, left: 30, child: _buildBlurCircle(burbuja.withOpacity(0.6), 180)),
-        Positioned(bottom: 80, right: -40, child: _buildBlurCircle(burbuja, 280)),
+        Positioned(
+          top: 280,
+          left: -100,
+          child: _buildBlurCircle(burbuja.withOpacity(0.4), 300),
+        ),
+        Positioned(
+          bottom: 220,
+          left: 30,
+          child: _buildBlurCircle(burbuja.withOpacity(0.6), 180),
+        ),
+        Positioned(
+          bottom: 80,
+          right: -40,
+          child: _buildBlurCircle(burbuja, 280),
+        ),
 
-        // --- BURBUJAS FLOTANTES (Definidas) ---
-        _buildFloatingBubble(top: 120, left: 40, size: 120, color: primario.withOpacity(0.1)),
+        _buildFloatingBubble(
+          top: 120,
+          left: 40,
+          size: 120,
+          color: primario.withOpacity(0.1),
+        ),
         _buildFloatingBubble(top: 400, right: 30, size: 40, color: burbuja),
-        _buildFloatingBubble(bottom: 300, right: 80, size: 60, color: primario.withOpacity(0.05)),
-        _buildFloatingBubble(bottom: 150, left: 20, size: 120, color: burbuja.withOpacity(0.8)),
+        _buildFloatingBubble(
+          bottom: 300,
+          right: 80,
+          size: 60,
+          color: primario.withOpacity(0.05),
+        ),
+        _buildFloatingBubble(
+          bottom: 150,
+          left: 20,
+          size: 120,
+          color: burbuja.withOpacity(0.8),
+        ),
       ],
     );
   }
@@ -72,14 +109,23 @@ class WelcomeScreen extends StatelessWidget {
   // ----------------------------------------------------------------------
   // SEGMENTO: CONTENIDO
   // ----------------------------------------------------------------------
-  Widget _buildMainContent(BuildContext context, Color tituloC, Color primario) {
+  Widget _buildMainContent(
+    BuildContext context,
+    Color tituloC,
+    Color primario,
+  ) {
     return SafeArea(
       child: Column(
         children: [
           const SizedBox(height: 40),
           _buildLogo(primario),
           const SizedBox(height: 20),
-          _buildTextSection("Tu cuerpo,\ntu equipo.", tituloC, 48, FontWeight.w900),
+          _buildTextSection(
+            "Tu cuerpo,\ntu equipo.",
+            tituloC,
+            48,
+            FontWeight.w900,
+          ),
           const Spacer(),
           _buildBottomSection(tituloC),
           const SizedBox(height: 50),
@@ -110,7 +156,12 @@ class WelcomeScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: [
-          _buildTextSection("Alcanza tu máximo\npotencial", tituloC, 28, FontWeight.bold),
+          _buildTextSection(
+            "Alcanza tu máximo\npotencial",
+            tituloC,
+            28,
+            FontWeight.bold,
+          ),
           const SizedBox(height: 15),
           Text(
             "Únete a la comunidad de entrenamiento más exclusiva y lleva un registro profesional de tus progresos.",
@@ -136,7 +187,10 @@ class WelcomeScreen extends StatelessWidget {
               label: "Entrar",
               color: primario,
               textColor: Colors.white,
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              ),
             ),
           ),
           const SizedBox(width: 15),
@@ -146,7 +200,10 @@ class WelcomeScreen extends StatelessWidget {
               color: Colors.transparent,
               textColor: primario,
               isOutlined: true,
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen())),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+              ),
             ),
           ),
         ],
@@ -157,7 +214,12 @@ class WelcomeScreen extends StatelessWidget {
   // ----------------------------------------------------------------------
   // HELPERS DE DISEÑO
   // ----------------------------------------------------------------------
-  Widget _buildTextSection(String text, Color color, double size, FontWeight weight) {
+  Widget _buildTextSection(
+    String text,
+    Color color,
+    double size,
+    FontWeight weight,
+  ) {
     return Text(
       text,
       textAlign: TextAlign.center,
@@ -171,7 +233,13 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButton({required String label, required Color color, required Color textColor, bool isOutlined = false, required VoidCallback onPressed}) {
+  Widget _buildButton({
+    required String label,
+    required Color color,
+    required Color textColor,
+    bool isOutlined = false,
+    required VoidCallback onPressed,
+  }) {
     return SizedBox(
       height: 75,
       child: isOutlined
@@ -179,10 +247,18 @@ class WelcomeScreen extends StatelessWidget {
               onPressed: onPressed,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
                 foregroundColor: textColor,
               ),
-              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : ElevatedButton(
               onPressed: onPressed,
@@ -190,9 +266,17 @@ class WelcomeScreen extends StatelessWidget {
                 backgroundColor: color,
                 foregroundColor: textColor,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
-              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
     );
   }
@@ -211,9 +295,19 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFloatingBubble({double? top, double? left, double? right, double? bottom, required double size, required Color color}) {
+  Widget _buildFloatingBubble({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    required double size,
+    required Color color,
+  }) {
     return Positioned(
-      top: top, left: left, right: right, bottom: bottom,
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
       child: Container(
         width: size,
         height: size,
@@ -225,7 +319,7 @@ class WelcomeScreen extends StatelessWidget {
               color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 5),
-            )
+            ),
           ],
         ),
       ),

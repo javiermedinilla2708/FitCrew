@@ -6,20 +6,22 @@ class AuthService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // --- REGISTRO ---
-  Future<User?> registerWithEmail(String email, String password, String name) async {
+  Future<User?> registerWithEmail(
+    String email,
+    String password,
+    String name,
+  ) async {
     try {
-      // Normalizamos el email a minúsculas
       final normalizedEmail = email.trim().toLowerCase();
 
       UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: normalizedEmail, 
-        password: password
+        email: normalizedEmail,
+        password: password,
       );
-      
+
       User? user = result.user;
 
       if (user != null) {
-        // Actualizamos el nombre en el perfil de Firebase Auth (para acceso rápido)
         await user.updateDisplayName(name);
 
         // Guardamos el documento inicial en Firestore
@@ -28,9 +30,9 @@ class AuthService {
           'name': name,
           'email': normalizedEmail,
           'createdAt': FieldValue.serverTimestamp(),
-          'favoriteSports': [], 
+          'favoriteSports': [],
           'profilePic': null,
-          'bio': "", // Añadimos campo bio opcional para el futuro
+          'bio': "",
         });
       }
       return user;
@@ -44,7 +46,7 @@ class AuthService {
       } else if (e.code == 'invalid-email') {
         errorMessage = "El formato del correo electrónico no es válido.";
       }
-      throw errorMessage; 
+      throw errorMessage;
     } catch (e) {
       throw "Error general: ${e.toString()}";
     }
@@ -54,10 +56,10 @@ class AuthService {
   Future<User?> loginWithEmail(String email, String password) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
-      
+
       UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: normalizedEmail, 
-        password: password
+        email: normalizedEmail,
+        password: password,
       );
       return result.user;
     } on FirebaseAuthException catch (e) {
@@ -96,9 +98,7 @@ class AuthService {
   // --- ACTUALIZAR DEPORTES FAVORITOS ---
   Future<void> updateFavoriteSports(String uid, List<String> sports) async {
     try {
-      await _db.collection('users').doc(uid).update({
-        'favoriteSports': sports,
-      });
+      await _db.collection('users').doc(uid).update({'favoriteSports': sports});
     } catch (e) {
       print("Error al actualizar deportes: $e");
       throw "No se pudieron guardar tus deportes favoritos.";

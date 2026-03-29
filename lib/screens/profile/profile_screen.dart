@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
     required this.userName,
   });
 
-  // --- NUEVA PALETA DE COLORES ---
+  // --- PALETA DE COLORES ---
   final Color colorVerdeBosque = const Color(0xFF234D41);
   final Color colorVerdeMenta = const Color(0xFFD3E6DB);
   final Color colorFondoFrio = const Color(0xFFFBFDFA);
@@ -43,7 +43,11 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_horiz_rounded, color: colorVerdeBosque, size: 28),
+            icon: Icon(
+              Icons.more_horiz_rounded,
+              color: colorVerdeBosque,
+              size: 28,
+            ),
             onPressed: () => _showSettingsMenu(context),
           ),
         ],
@@ -67,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- MENÚ DE GESTIÓN (BOTTOM SHEET) ---
+  // --- MENÚ DE GESTIÓN ---
   void _showSettingsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -96,7 +100,9 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   const CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage("https://picsum.photos/seed/profile/300"),
+                    backgroundImage: NetworkImage(
+                      "https://picsum.photos/seed/profile/300",
+                    ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
@@ -105,11 +111,18 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         Text(
                           userName,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: colorVerdeBosque,
+                          ),
                         ),
                         Text(
                           userEmail,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -141,19 +154,34 @@ class ProfileScreen extends StatelessWidget {
               const Divider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.logout_rounded, color: Color(0xFF234D41)),
-                title: const Text("Cerrar Sesión", style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.logout_rounded,
+                  color: Color(0xFF234D41),
+                ),
+                title: const Text(
+                  "Cerrar Sesión",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el BottomSheet
+                  Navigator.pop(context);
                   _showLogoutDialog(context);
                 },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.delete_forever_outlined, color: Color(0xFF234D41)),
-                title: const Text("Eliminar Cuenta", style: TextStyle(color: Color(0xFF234D41), fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Color(0xFF234D41),
+                ),
+                title: const Text(
+                  "Eliminar Cuenta",
+                  style: TextStyle(
+                    color: Color(0xFF234D41),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el BottomSheet
+                  Navigator.pop(context);
                   _handleDeleteAccount(context);
                 },
               ),
@@ -181,9 +209,23 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: colorVerdeBosque, size: 22),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colorVerdeBosque)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: colorVerdeBosque,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 14,
+        color: Colors.grey,
+      ),
       onTap: onTap,
     );
   }
@@ -208,20 +250,40 @@ class ProfileScreen extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundColor: Color(0xFFF1F3F5),
-                  backgroundImage: NetworkImage("https://picsum.photos/seed/profile/300"),
+                  backgroundImage: NetworkImage(
+                    "https://picsum.photos/seed/profile/300",
+                  ),
                 ),
               ),
             ),
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: colorVerdeBosque, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: colorVerdeBosque,
+                shape: BoxShape.circle,
+              ),
               child: const Icon(Icons.edit, color: Colors.white, size: 16),
-            )
+            ),
           ],
         ),
         const SizedBox(height: 20),
-        Text(userName, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: colorVerdeBosque)),
-        const Text("Miembro Elite de FitCrew", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
+        Text(
+          userName,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+            color: colorVerdeBosque,
+          ),
+        ),
+        const Text(
+          "Miembro Elite de FitCrew",
+          style: TextStyle(
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
@@ -248,12 +310,32 @@ class ProfileScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: colorVerdeBosque.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: colorVerdeBosque.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
-            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colorVerdeBosque,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -271,13 +353,21 @@ class ProfileScreen extends StatelessWidget {
             child: _cardWrapper(
               child: Column(
                 children: [
-                  Text("Entrenos", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorVerdeBosque)),
+                  Text(
+                    "Entrenos",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: colorVerdeBosque,
+                    ),
+                  ),
                   const SizedBox(height: 15),
                   Stack(
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        height: 65, width: 65,
+                        height: 65,
+                        width: 65,
                         child: CircularProgressIndicator(
                           value: 0.75,
                           strokeWidth: 7,
@@ -285,11 +375,21 @@ class ProfileScreen extends StatelessWidget {
                           valueColor: AlwaysStoppedAnimation<Color>(color),
                         ),
                       ),
-                      Text("24", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
+                      Text(
+                        "24",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: colorVerdeBosque,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("Este mes", style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  const Text(
+                    "Este mes",
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
                 ],
               ),
             ),
@@ -307,22 +407,40 @@ class ProfileScreen extends StatelessWidget {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SizedBox(
                       height: 100,
-                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     );
                   }
 
                   final data = snapshot.data?.data() as Map<String, dynamic>?;
-                  final List<dynamic> sportsData = data?['favoriteSports'] ?? [];
-                  
+                  final List<dynamic> sportsData =
+                      data?['favoriteSports'] ?? [];
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Mis Deportes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorVerdeBosque)),
+                      Text(
+                        "Mis Deportes",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: colorVerdeBosque,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       if (sportsData.isEmpty)
-                        const Text("Sin deportes aún", style: TextStyle(color: Colors.grey, fontSize: 12))
+                        const Text(
+                          "Sin deportes aún",
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        )
                       else
-                        ...sportsData.take(3).map((sport) => _buildSportLevelBar(sport.toString(), color)),
+                        ...sportsData
+                            .take(3)
+                            .map(
+                              (sport) =>
+                                  _buildSportLevelBar(sport.toString(), color),
+                            ),
                     ],
                   );
                 },
@@ -340,7 +458,13 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: colorVerdeBosque.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: colorVerdeBosque.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: child,
     );
@@ -354,8 +478,18 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(sport, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
-              const Text("Nvl. 4", style: TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(
+                sport,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: colorVerdeBosque,
+                ),
+              ),
+              const Text(
+                "Nvl. 4",
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 5),
@@ -381,7 +515,14 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: Text("Mis Logros", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorVerdeBosque)),
+          child: Text(
+            "Mis Logros",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorVerdeBosque,
+            ),
+          ),
         ),
         const SizedBox(height: 15),
         StreamBuilder<QuerySnapshot>(
@@ -445,8 +586,10 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Icon(Icons.camera_alt_outlined, size: 50, color: colorVerdeMenta),
             const SizedBox(height: 10),
-            const Text("Aún no has compartido ningún logro", 
-              style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const Text(
+              "Aún no has compartido ningún logro",
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
           ],
         ),
       ),
@@ -455,12 +598,15 @@ class ProfileScreen extends StatelessWidget {
 
   // --- LÓGICA DE AUTENTICACIÓN ---
 
-  Future<void> _handleLogout(NavigatorState navigator, AuthViewModel authVM) async {
+  Future<void> _handleLogout(
+    NavigatorState navigator,
+    AuthViewModel authVM,
+  ) async {
     try {
       await authVM.logout();
       navigator.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
-        (route) => false, 
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
       );
     } catch (e) {
       debugPrint("Error al cerrar sesión: $e");
@@ -468,7 +614,6 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    // Obtenemos las referencias antes del showDialog
     final navigator = Navigator.of(context);
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
 
@@ -476,11 +621,16 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           backgroundColor: Colors.white,
           title: Text(
             "¿Cerrar sesión?",
-            style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colorVerdeBosque,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: const Text(
             "¿Estás seguro de que quieres salir de tu cuenta de FitCrew?",
@@ -491,7 +641,10 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 "Cancelar",
-                style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             ElevatedButton(
@@ -501,12 +654,17 @@ class ProfileScreen extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorVerdeBosque,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: const Text(
                 "Cerrar Sesión",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -527,11 +685,18 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Color(0xFF234D41), size: 28),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFF234D41),
+              size: 28,
+            ),
             const SizedBox(width: 10),
             Text(
-              "¿Borrar cuenta?", 
-              style: TextStyle(color: colorVerdeBosque, fontWeight: FontWeight.bold)
+              "¿Borrar cuenta?",
+              style: TextStyle(
+                color: colorVerdeBosque,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -548,7 +713,9 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorVerdeBosque,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -556,23 +723,32 @@ class ProfileScreen extends StatelessWidget {
 
               if (success) {
                 navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
-                  (route) => false
+                  MaterialPageRoute(
+                    builder: (context) => const WelcomeScreen(),
+                  ),
+                  (route) => false,
                 );
               } else {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(authVM.errorMessage ?? "Error al eliminar la cuenta"),
+                    content: Text(
+                      authVM.errorMessage ?? "Error al eliminar la cuenta",
+                    ),
                     backgroundColor: colorVerdeBosque,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
             },
             child: const Text(
-              "ELIMINAR TODO", 
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+              "ELIMINAR TODO",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

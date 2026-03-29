@@ -1,34 +1,33 @@
 import 'package:fitcrew/models/sport_activity.dart';
 import 'package:flutter/material.dart';
 
-class ActivityViewModel extends ChangeNotifier{
-  
+class ActivityViewModel extends ChangeNotifier {
   //Lista de actividades
-  List <SportActivity> _activities=[];
-  bool _isLoading= false;
+  List<SportActivity> _activities = [];
+  bool _isLoading = false;
 
   //Getters para acceder a los datos
-  List<SportActivity> get activities=>_activities;
+  List<SportActivity> get activities => _activities;
   bool get isLoading => _isLoading;
 
   //Función para crear
-  void addActivity(SportActivity activity){
+  void addActivity(SportActivity activity) {
     _activities.add(activity);
     notifyListeners();
   }
 
   //Función para editar
-  void updateActiviy(String id,SportActivity updateActiviy){
-    final index=_activities.indexWhere((e)=>e.id==id);
-    if(index != -1){
-      _activities[index]=updateActiviy;
+  void updateActiviy(String id, SportActivity updateActiviy) {
+    final index = _activities.indexWhere((e) => e.id == id);
+    if (index != -1) {
+      _activities[index] = updateActiviy;
       notifyListeners();
     }
   }
 
   //Función para borrar
-  void deleteActivity(String id){
-    _activities.removeWhere((e)=>e.id==id);
+  void deleteActivity(String id) {
+    _activities.removeWhere((e) => e.id == id);
     notifyListeners();
   }
 
@@ -43,7 +42,6 @@ class ActivityViewModel extends ChangeNotifier{
     _isLoading = true;
     notifyListeners();
 
-    // Aquí iría la llamada a Firebase en el futuro
     _activities = [
       SportActivity(
         id: '1',

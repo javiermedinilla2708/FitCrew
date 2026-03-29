@@ -88,7 +88,7 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // --- NUEVA FUNCIÓN: ELIMINAR POST ---
+  // --- ELIMINAR POST ---
   Future<bool> deletePost(String postId) async {
     _isLoading = true;
     notifyListeners();
