@@ -1,32 +1,25 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fitcrew/services/auth_services.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  // ✅ Solo necesita AuthService, nada de Firebase directo
+  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    await _authService.signOut();
   }
 
+  // ✅ Delega completamente en AuthService
   Future<void> deleteAccount() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
     _isLoading = true;
     notifyListeners();
-
     try {
-      // 1. Borrar datos de Firestore
-      await _db.collection('users').doc(user.uid).delete();
-      // 2. Borrar el usuario de Auth
-      await user.delete();
+      await _authService.deleteUserAccount();
     } catch (e) {
-      rethrow; // El UI se encargará de mostrar el error
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -6,6 +6,12 @@ import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// ============================================================
+// ProfileScreen
+// Pantalla de perfil con estadísticas, deportes favoritos
+// y galería de logros del usuario
+// ============================================================
+
 class ProfileScreen extends StatelessWidget {
   final List<String> userSports;
   final String userEmail;
@@ -18,24 +24,29 @@ class ProfileScreen extends StatelessWidget {
     required this.userName,
   });
 
-  // --- PALETA DE COLORES ---
-  final Color colorVerdeBosque = const Color(0xFF234D41);
-  final Color colorVerdeMenta = const Color(0xFFD3E6DB);
-  final Color colorFondoFrio = const Color(0xFFFBFDFA);
+  // ----------------------------------------------------------
+  // COLORES
+  // ----------------------------------------------------------
+  static const _colorVerdeBosque = Color(0xFF234D41);
+  static const _colorVerdeMenta = Color(0xFFD3E6DB);
+  static const _colorFondoFrio = Color(0xFFFBFDFA);
 
+  // ----------------------------------------------------------
+  // BUILD
+  // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: colorFondoFrio,
+      backgroundColor: _colorFondoFrio,
       appBar: AppBar(
-        backgroundColor: colorFondoFrio,
-        surfaceTintColor: colorFondoFrio,
+        backgroundColor: _colorFondoFrio,
+        surfaceTintColor: _colorFondoFrio,
         elevation: 0,
         centerTitle: false,
-        title: Text(
+        title: const Text(
           "Mi Perfil",
           style: TextStyle(
-            color: colorVerdeBosque,
+            color: _colorVerdeBosque,
             fontWeight: FontWeight.bold,
             fontSize: 26,
             letterSpacing: -1,
@@ -43,9 +54,9 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.more_horiz_rounded,
-              color: colorVerdeBosque,
+              color: _colorVerdeBosque,
               size: 28,
             ),
             onPressed: () => _showSettingsMenu(context),
@@ -57,13 +68,25 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            _buildHeader(colorVerdeBosque),
+
+            // --- Avatar y nombre ---
+            _buildHeader(),
+
             const SizedBox(height: 30),
+
+            // --- Estadísticas (posts reales de Firestore) ---
             _buildStatsGrid(),
+
             const SizedBox(height: 25),
-            _buildPerformanceDashboard(colorVerdeBosque),
+
+            // --- Dashboard de rendimiento ---
+            _buildPerformanceDashboard(),
+
             const SizedBox(height: 35),
+
+            // --- Galería de posts ---
             _buildPostSection(),
+
             const SizedBox(height: 120),
           ],
         ),
@@ -71,125 +94,141 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- MENÚ DE GESTIÓN ---
+  // ----------------------------------------------------------
+  // SEGMENTO: MENÚ DE CONFIGURACIÓN
+  // ----------------------------------------------------------
   void _showSettingsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 45,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 45,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(height: 25),
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundImage: NetworkImage(
-                      "https://picsum.photos/seed/profile/300",
+            ),
+
+            const SizedBox(height: 25),
+
+            // --- Info del usuario ---
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: _colorVerdeMenta,
+                  child: Text(
+                    userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: _colorVerdeBosque,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
                     ),
                   ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorVerdeBosque,
-                          ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _colorVerdeBosque,
                         ),
-                        Text(
-                          userEmail,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 25),
-              const Divider(),
-              _buildMenuOption(
-                icon: Icons.lock_person_outlined,
-                title: "Privacidad",
-                subtitle: "Perfil público, bloqueos y visibilidad",
-                onTap: () => Navigator.pop(context),
-              ),
-              _buildMenuOption(
-                icon: Icons.shield_outlined,
-                title: "Seguridad de la cuenta",
-                subtitle: "Cambiar contraseña y verificación",
-                onTap: () => Navigator.pop(context),
-              ),
-              _buildMenuOption(
-                icon: Icons.settings_suggest_outlined,
-                title: "Preferencias",
-                subtitle: "Unidades de medida y notificaciones",
-                onTap: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: 10),
-              const Divider(),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.logout_rounded,
-                  color: Color(0xFF234D41),
-                ),
-                title: const Text(
-                  "Cerrar Sesión",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showLogoutDialog(context);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.delete_forever_outlined,
-                  color: Color(0xFF234D41),
-                ),
-                title: const Text(
-                  "Eliminar Cuenta",
-                  style: TextStyle(
-                    color: Color(0xFF234D41),
-                    fontWeight: FontWeight.w600,
+                      ),
+                      Text(
+                        userEmail,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleDeleteAccount(context);
-                },
+              ],
+            ),
+
+            const SizedBox(height: 25),
+            const Divider(),
+
+            // --- Opciones de menú ---
+            _buildMenuOption(
+              icon: Icons.lock_person_outlined,
+              title: "Privacidad",
+              subtitle: "Perfil público, bloqueos y visibilidad",
+              onTap: () => Navigator.pop(context),
+            ),
+            _buildMenuOption(
+              icon: Icons.shield_outlined,
+              title: "Seguridad de la cuenta",
+              subtitle: "Cambiar contraseña y verificación",
+              onTap: () => Navigator.pop(context),
+            ),
+            _buildMenuOption(
+              icon: Icons.settings_suggest_outlined,
+              title: "Preferencias",
+              subtitle: "Unidades de medida y notificaciones",
+              onTap: () => Navigator.pop(context),
+            ),
+
+            const SizedBox(height: 10),
+            const Divider(),
+
+            // --- Cerrar sesión ---
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.logout_rounded,
+                color: _colorVerdeBosque,
               ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        );
-      },
+              title: const Text(
+                "Cerrar Sesión",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showLogoutDialog(context);
+              },
+            ),
+
+            // --- Eliminar cuenta ---
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.delete_forever_outlined,
+                color: _colorVerdeBosque,
+              ),
+              title: const Text(
+                "Eliminar Cuenta",
+                style: TextStyle(
+                  color: _colorVerdeBosque,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleDeleteAccount(context);
+              },
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
     );
   }
 
@@ -204,17 +243,17 @@ class ProfileScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: colorVerdeMenta.withOpacity(0.3),
+          color: _colorVerdeMenta.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: colorVerdeBosque, size: 22),
+        child: Icon(icon, color: _colorVerdeBosque, size: 22),
       ),
       title: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 15,
-          color: colorVerdeBosque,
+          color: _colorVerdeBosque,
         ),
       ),
       subtitle: Text(
@@ -230,9 +269,10 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- WIDGETS DE INTERFAZ ---
-
-  Widget _buildHeader(Color color) {
+  // ----------------------------------------------------------
+  // SEGMENTO: CABECERA DE PERFIL
+  // ----------------------------------------------------------
+  Widget _buildHeader() {
     return Column(
       children: [
         Stack(
@@ -242,38 +282,43 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: colorVerdeMenta, width: 2),
+                border: Border.all(color: _colorVerdeMenta, width: 2),
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 55,
-                backgroundColor: Colors.white,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Color(0xFFF1F3F5),
-                  backgroundImage: NetworkImage(
-                    "https://picsum.photos/seed/profile/300",
+                backgroundColor: _colorVerdeMenta,
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: _colorVerdeBosque,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 40,
                   ),
                 ),
               ),
             ),
+
+            // Botón editar foto
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorVerdeBosque,
+              decoration: const BoxDecoration(
+                color: _colorVerdeBosque,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.edit, color: Colors.white, size: 16),
             ),
           ],
         ),
+
         const SizedBox(height: 20),
+
         Text(
           userName,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            color: colorVerdeBosque,
+            color: _colorVerdeBosque,
           ),
         ),
         const Text(
@@ -288,16 +333,33 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: ESTADÍSTICAS
+  // ----------------------------------------------------------
   Widget _buildStatsGrid() {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _statItem("12", "Posts"),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('posts')
+                  .where('userId', isEqualTo: uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                return _statItem(count.toString(), "Posts");
+              },
+            ),
+          ),
           const SizedBox(width: 12),
-          _statItem("248", "Seguidores"),
+
+          _statItem("—", "Seguidores"),
           const SizedBox(width: 12),
-          _statItem("156", "Seguidos"),
+          _statItem("—", "Seguidos"),
         ],
       ),
     );
@@ -312,7 +374,7 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: colorVerdeBosque.withOpacity(0.04),
+              color: _colorVerdeBosque.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -322,10 +384,10 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: colorVerdeBosque,
+                color: _colorVerdeBosque,
               ),
             ),
             Text(
@@ -342,23 +404,27 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPerformanceDashboard(Color color) {
+  // ----------------------------------------------------------
+  // SEGMENTO: DASHBOARD DE RENDIMIENTO
+  // ----------------------------------------------------------
+  Widget _buildPerformanceDashboard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- Card de entrenos (datos pendientes de implementar) ---
           Expanded(
             flex: 4,
             child: _cardWrapper(
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     "Entrenos",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: colorVerdeBosque,
+                      color: _colorVerdeBosque,
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -371,16 +437,19 @@ class ProfileScreen extends StatelessWidget {
                         child: CircularProgressIndicator(
                           value: 0.75,
                           strokeWidth: 7,
-                          backgroundColor: colorVerdeMenta.withOpacity(0.3),
-                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                          backgroundColor: _colorVerdeMenta.withOpacity(0.3),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            _colorVerdeBosque,
+                          ),
                         ),
                       ),
-                      Text(
-                        "24",
+                      // ⚠️ Pendiente de conectar con datos reales
+                      const Text(
+                        "—",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: colorVerdeBosque,
+                          color: _colorVerdeBosque,
                         ),
                       ),
                     ],
@@ -394,7 +463,9 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             flex: 6,
             child: _cardWrapper(
@@ -420,12 +491,12 @@ class ProfileScreen extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         "Mis Deportes",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: colorVerdeBosque,
+                          color: _colorVerdeBosque,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -437,10 +508,7 @@ class ProfileScreen extends StatelessWidget {
                       else
                         ...sportsData
                             .take(3)
-                            .map(
-                              (sport) =>
-                                  _buildSportLevelBar(sport.toString(), color),
-                            ),
+                            .map((sport) => _buildSportBar(sport.toString())),
                     ],
                   );
                 },
@@ -460,7 +528,7 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: colorVerdeBosque.withOpacity(0.02),
+            color: _colorVerdeBosque.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -470,7 +538,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSportLevelBar(String sport, Color color) {
+  Widget _buildSportBar(String sport) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -480,14 +548,14 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(
                 sport,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: colorVerdeBosque,
+                  color: _colorVerdeBosque,
                 ),
               ),
               const Text(
-                "Nvl. 4",
+                "—",
                 style: TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ],
@@ -498,8 +566,10 @@ class ProfileScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: 0.6,
               minHeight: 5,
-              backgroundColor: colorVerdeMenta.withOpacity(0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+              backgroundColor: _colorVerdeMenta.withOpacity(0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                _colorVerdeBosque,
+              ),
             ),
           ),
         ],
@@ -507,24 +577,29 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: GALERÍA DE POSTS
+  // ----------------------------------------------------------
   Widget _buildPostSection() {
     final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 25),
           child: Text(
             "Mis Logros",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: colorVerdeBosque,
+              color: _colorVerdeBosque,
             ),
           ),
         ),
+
         const SizedBox(height: 15),
+
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('posts')
@@ -560,7 +635,7 @@ class ProfileScreen extends StatelessWidget {
                   return Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: colorVerdeMenta.withOpacity(0.2),
+                      color: _colorVerdeMenta.withOpacity(0.2),
                       image: base64String.isNotEmpty
                           ? DecorationImage(
                               image: MemoryImage(base64Decode(base64String)),
@@ -584,7 +659,11 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 40),
         child: Column(
           children: [
-            Icon(Icons.camera_alt_outlined, size: 50, color: colorVerdeMenta),
+            const Icon(
+              Icons.camera_alt_outlined,
+              size: 50,
+              color: _colorVerdeMenta,
+            ),
             const SizedBox(height: 10),
             const Text(
               "Aún no has compartido ningún logro",
@@ -596,8 +675,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- LÓGICA DE AUTENTICACIÓN ---
-
+  // ----------------------------------------------------------
+  // SEGMENTO: LÓGICA DE AUTENTICACIÓN
+  // ----------------------------------------------------------
   Future<void> _handleLogout(
     NavigatorState navigator,
     AuthViewModel authVM,
@@ -619,57 +699,56 @@ class ProfileScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        title: const Text(
+          "¿Cerrar sesión?",
+          style: TextStyle(
+            color: _colorVerdeBosque,
+            fontWeight: FontWeight.bold,
           ),
-          backgroundColor: Colors.white,
-          title: Text(
-            "¿Cerrar sesión?",
-            style: TextStyle(
-              color: colorVerdeBosque,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            "¿Estás seguro de que quieres salir de tu cuenta de FitCrew?",
-            style: TextStyle(color: Colors.grey),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                "Cancelar",
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w600,
-                ),
+        ),
+        content: const Text(
+          "¿Estás seguro de que quieres salir de tu cuenta de FitCrew?",
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          // --- Cancelar ---
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              "Cancelar",
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx); // Cierra el diálogo
-                _handleLogout(navigator, authVM);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorVerdeBosque,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+          ),
+
+          // --- Confirmar logout ---
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _handleLogout(navigator, authVM);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _colorVerdeBosque,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                "Cerrar Sesión",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              elevation: 0,
+            ),
+            child: const Text(
+              "Cerrar Sesión",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
@@ -683,18 +762,18 @@ class ProfileScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         backgroundColor: Colors.white,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
-              color: Color(0xFF234D41),
+              color: _colorVerdeBosque,
               size: 28,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Text(
               "¿Borrar cuenta?",
               style: TextStyle(
-                color: colorVerdeBosque,
+                color: _colorVerdeBosque,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -705,13 +784,16 @@ class ProfileScreen extends StatelessWidget {
           style: TextStyle(color: Colors.grey),
         ),
         actions: [
+          // --- Cancelar ---
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text("Cancelar", style: TextStyle(color: Colors.grey[600])),
           ),
+
+          // --- Confirmar borrado ---
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorVerdeBosque,
+              backgroundColor: _colorVerdeBosque,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -719,7 +801,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              bool success = await authVM.deleteAccount();
+              final success = await authVM.deleteAccount();
 
               if (success) {
                 navigator.pushAndRemoveUntil(
@@ -734,7 +816,7 @@ class ProfileScreen extends StatelessWidget {
                     content: Text(
                       authVM.errorMessage ?? "Error al eliminar la cuenta",
                     ),
-                    backgroundColor: colorVerdeBosque,
+                    backgroundColor: _colorVerdeBosque,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

@@ -36,8 +36,8 @@ class Post {
       sportType: map['sportType'] ?? 'Otros',
       description: map['description'] ?? '',
       imageUrl: map['imageUrl'],
-      date: map['date'] is Timestamp 
-          ? (map['date'] as Timestamp).toDate() 
+      date: map['date'] is Timestamp
+          ? (map['date'] as Timestamp).toDate()
           : DateTime.now(),
       likesCount: map['likesCount'] ?? 0,
       commentsCount: map['commentsCount'] ?? 0,
@@ -58,5 +58,33 @@ class Post {
       'commentsCount': commentsCount,
       'level': level,
     };
+  }
+
+  Post copyWith({
+    String? id,
+    String? userId,
+    String? userName,
+    String? userPic,
+    String? sportType,
+    String? description,
+    String? imageUrl,
+    DateTime? date,
+    int? likesCount,
+    int? commentsCount,
+    String? level,
+  }) {
+    return Post(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      userPic: userPic ?? this.userPic,
+      sportType: sportType ?? this.sportType,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      date: date ?? this.date,
+      likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
+      level: level ?? this.level,
+    );
   }
 }

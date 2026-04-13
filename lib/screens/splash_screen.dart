@@ -2,6 +2,11 @@ import 'dart:async';
 import 'package:fitcrew/screens/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 
+// ============================================================
+// SplashScreen
+// Pantalla de inicio animada que redirige al AuthWrapper
+// ============================================================
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -11,9 +16,15 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  // ----------------------------------------------------------
+  // ANIMACIÓN
+  // ----------------------------------------------------------
   late AnimationController _controller;
   late Animation<double> _animation;
 
+  // ----------------------------------------------------------
+  // CICLO DE VIDA
+  // ----------------------------------------------------------
   @override
   void initState() {
     super.initState();
@@ -25,11 +36,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.elasticInOut,
+      curve: Curves.easeOutBack,
     );
 
     _controller.forward();
 
+    // --- NAVEGACIÓN: redirige al AuthWrapper  ---
     Timer(const Duration(milliseconds: 3500), () {
       if (mounted) {
         Navigator.pushReplacement(
@@ -46,8 +58,12 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  // ----------------------------------------------------------
+  // BUILD
+  // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    // --- COLORES ---
     const colorMentol = Color(0xFFDBF0DD);
     const colorPrimario = Color(0xFF235347);
     const colorFondoOscuro = Color(0xFF051F20);
@@ -87,6 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
+          // --- FONDO ---
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -106,6 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // --- LOGO ANIMADO ---
                 ScaleTransition(
                   scale: _animation,
                   child: Column(
@@ -116,6 +134,7 @@ class _SplashScreenState extends State<SplashScreen>
                         size: 40,
                       ),
                       const SizedBox(height: 10),
+
                       RichText(
                         text: const TextSpan(
                           children: [
@@ -145,9 +164,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 40),
 
-                // Indicador de carga
+                // --- BARRA DE CARGA ---
                 Container(
                   width: 140,
                   decoration: BoxDecoration(

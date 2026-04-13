@@ -27,4 +27,14 @@ class CommentModel {
       date: (map['date'] as Timestamp).toDate(),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'userName': userName,
+      'userPic': userPic,
+      'text': text,
+      'date': Timestamp.fromDate(date),
+    };
+  }
 }

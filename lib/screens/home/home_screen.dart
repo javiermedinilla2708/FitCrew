@@ -1,10 +1,19 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/activities/activities_screen.dart';
+import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:fitcrew/screens/profile/profile_screen.dart';
-import 'package:fitcrew/viewmodels/post_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:fitcrew/viewmodels/post_viewmodel.dart';
+
+// ============================================================
+// HomeScreen
+// Pantalla principal con feed social, navegación inferior
+// y acceso a actividades y perfil
+// ============================================================
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,39 +23,48 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final User? user = FirebaseAuth.instance.currentUser;
-  final PostViewModel _postVM = PostViewModel(); // Instancia del ViewModel
+  // ----------------------------------------------------------
+  // COLORES
+  // ----------------------------------------------------------
+  static const _colorVerdeBosque = Color(0xFF234D41);
+  static const _colorVerdeMenta = Color(0xFFD3E6DB);
+  static const _colorFondoFrio = Color(0xFFFBFDFA);
+  static const _colorTextoTitulo = Color(0xFF0F1D19);
+
+  // ----------------------------------------------------------
+  // ESTADO
+  // ----------------------------------------------------------
+  final User? _user = FirebaseAuth.instance.currentUser;
 
   List<String> _userSports = [];
+  String _currentUserName = "Usuario";
   bool _isLoading = true;
   int _selectedIndex = 0;
 
-  // --- PALETA DE COLORES FITCREW ---
-  final Color colorVerdeBosque = const Color(0xFF234D41);
-  final Color colorVerdeMenta = const Color(0xFFD3E6DB);
-  final Color colorFondoFrio = const Color(0xFFFBFDFA);
-  final Color colorTextoTitulo = const Color(0xFF0F1D19);
-
-  String _currentUserName = "Usuario";
-
+  // ----------------------------------------------------------
+  // CICLO DE VIDA
+  // ----------------------------------------------------------
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
 
+  // ----------------------------------------------------------
+  // CARGA DE DATOS DE USUARIO
+  // ----------------------------------------------------------
   Future<void> _loadUserData() async {
-    if (user == null) return;
+    if (_user == null) return;
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(user!.uid)
+          .doc(_user.uid)
           .get();
 
-      if (userDoc.exists && mounted) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+      if (doc.exists && mounted) {
+        final data = doc.data() as Map<String, dynamic>;
         setState(() {
-          _currentUserName = data['name'] ?? user?.displayName ?? "Usuario";
+          _currentUserName = data['name'] ?? _user.displayName ?? "Usuario";
           _userSports = List<String>.from(data['favoriteSports'] ?? []);
         });
       }
@@ -57,11 +75,31 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- LÓGICA DE ELIMINACIÓN ---
+  // ----------------------------------------------------------
+  // LÓGICA DE COMENTARIOS — delegada al servicio
+  // ----------------------------------------------------------
+  Future<void> _addComment(String postId, String commentText) async {
+    if (_user == null) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .add({
+            'userId': _user.uid,
+            'userName': _currentUserName,
+            'comment': commentText,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      debugPrint("Error al comentar: $e");
+    }
+  }
 
+  // ----------------------------------------------------------
+  // LÓGICA DE ELIMINACIÓN
+  // ----------------------------------------------------------
   void _confirmDeletion(BuildContext context, String postId) {
-    ScaffoldMessenger.of(context);
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -71,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icono de advertencia estilizado
+            // --- Icono de advertencia ---
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -84,21 +122,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 40,
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // Título y cuerpo
-            Text(
+            // --- Título ---
+            const Text(
               "¿Eliminar actividad?",
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: colorVerdeBosque,
+                color: _colorVerdeBosque,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
             ),
+
             const SizedBox(height: 12),
+
+            // --- Descripción ---
             Text(
-              "Esta acción borrará permanentemente tu registro del entrenamiento. ¿Estás seguro?",
+              "Esta acción borrará permanentemente tu registro. ¿Estás seguro?",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[600],
@@ -106,9 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 1.4,
               ),
             ),
+
             const SizedBox(height: 24),
 
-            // Botones en columna para mejor UX
+            // --- Botón eliminar ---
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -123,7 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: () async {
                   Navigator.pop(context);
-                  bool success = await _postVM.deletePost(postId);
+                  final success = await context
+                      .read<PostViewModel>()
+                      .deletePost(postId);
                   if (success && mounted) {
                     _showSnackBar("Actividad eliminada con éxito");
                   }
@@ -134,7 +179,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 10),
+
+            // --- Botón cancelar ---
             SizedBox(
               width: double.infinity,
               child: TextButton(
@@ -142,10 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: Text(
+                child: const Text(
                   "No, mantener post",
                   style: TextStyle(
-                    color: colorVerdeBosque,
+                    color: _colorVerdeBosque,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -157,6 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SNACKBAR
+  // ----------------------------------------------------------
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -165,38 +216,25 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: colorVerdeBosque,
+        backgroundColor: _colorVerdeBosque,
         margin: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
     );
   }
 
-  Future<void> _addCommentToFirebase(String postId, String commentText) async {
-    if (user == null) return;
-    try {
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .collection('comments')
-          .add({
-            'userId': user!.uid,
-            'userName': _currentUserName,
-            'comment': commentText,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
-    } catch (e) {
-      debugPrint("Error al comentar: $e");
-    }
-  }
-
+  // ----------------------------------------------------------
+  // BUILD
+  // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: colorFondoFrio,
+      backgroundColor: _colorFondoFrio,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: colorVerdeBosque))
+          ? const Center(
+              child: CircularProgressIndicator(color: _colorVerdeBosque),
+            )
           : _selectedIndex == 0
           ? _buildHomeFeed()
           : _buildOtherScreens(),
@@ -204,10 +242,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: FEED PRINCIPAL
+  // ----------------------------------------------------------
   Widget _buildHomeFeed() {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
+        // --- AppBar con header y chips de deportes ---
         SliverAppBar(
           floating: true,
           pinned: true,
@@ -226,19 +268,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+
+        // --- Lista de posts en tiempo real ---
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('posts')
               .orderBy('date', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
+            // Estado de carga
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return SliverFillRemaining(
+              return const SliverFillRemaining(
                 child: Center(
-                  child: CircularProgressIndicator(color: colorVerdeBosque),
+                  child: CircularProgressIndicator(color: _colorVerdeBosque),
                 ),
               );
             }
+
+            // Sin datos
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const SliverFillRemaining(
                 child: Center(child: Text("No hay actividades aún")),
@@ -265,24 +312,29 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
+
         const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: CABECERA SUPERIOR
+  // ----------------------------------------------------------
   Widget _buildTopHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // --- Logo FitCrew ---
           RichText(
-            text: TextSpan(
+            text: const TextSpan(
               children: [
                 TextSpan(
                   text: 'Fit',
                   style: TextStyle(
-                    color: colorTextoTitulo,
+                    color: _colorTextoTitulo,
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
                   ),
@@ -290,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 TextSpan(
                   text: 'Crew',
                   style: TextStyle(
-                    color: colorVerdeBosque,
+                    color: _colorVerdeBosque,
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
                   ),
@@ -298,15 +350,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // --- Botón notificaciones ---
           Container(
             decoration: BoxDecoration(
-              color: colorVerdeMenta.withOpacity(0.3),
+              color: _colorVerdeMenta.withOpacity(0.3),
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.notifications_none_rounded,
-                color: colorVerdeBosque,
+                color: _colorVerdeBosque,
               ),
               onPressed: () {},
             ),
@@ -316,6 +370,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: CHIPS DE DEPORTES FAVORITOS
+  // ----------------------------------------------------------
   Widget _buildStoriesRow() {
     return SizedBox(
       height: 45,
@@ -329,18 +386,22 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 10),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: colorVerdeMenta.withOpacity(0.4),
+              color: _colorVerdeMenta.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorVerdeBosque.withOpacity(0.1)),
+              border: Border.all(color: _colorVerdeBosque.withOpacity(0.1)),
             ),
             child: Row(
               children: [
-                Icon(_getSportIcon(sport), size: 16, color: colorVerdeBosque),
+                Icon(
+                  AppConstants.getSportIcon(sport),
+                  size: 16,
+                  color: _colorVerdeBosque,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   sport,
-                  style: TextStyle(
-                    color: colorVerdeBosque,
+                  style: const TextStyle(
+                    color: _colorVerdeBosque,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -353,6 +414,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: TARJETA DE POST SOCIAL
+  // ----------------------------------------------------------
   Widget _buildSocialPost(
     String postId,
     String userName,
@@ -362,8 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String description,
     String postOwnerId,
   ) {
-    // Validamos si el usuario actual es el dueño del post
-    final bool isMyPost = user?.uid == postOwnerId;
+    final bool isMyPost = _user?.uid == postOwnerId;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -372,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: colorVerdeBosque.withOpacity(0.06),
+            color: _colorVerdeBosque.withOpacity(0.06),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -381,17 +444,18 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- Cabecera del post ---
           ListTile(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
               vertical: 5,
             ),
             leading: CircleAvatar(
-              backgroundColor: colorVerdeMenta,
+              backgroundColor: _colorVerdeMenta,
               child: Text(
                 userName[0].toUpperCase(),
-                style: TextStyle(
-                  color: colorVerdeBosque,
+                style: const TextStyle(
+                  color: _colorVerdeBosque,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -404,6 +468,8 @@ class _HomeScreenState extends State<HomeScreen> {
               "$sport • $level",
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
+
+            // --- Menú opciones (solo si es mi post) ---
             trailing: isMyPost
                 ? PopupMenuButton<String>(
                     icon: Icon(
@@ -414,7 +480,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     onSelected: (value) {
-                      if (value == 'delete') _confirmDeletion(context, postId);
+                      if (value == 'delete') {
+                        _confirmDeletion(context, postId);
+                      }
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -439,6 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : null,
           ),
 
+          // --- Imagen del post ---
           if (imageStr != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -446,21 +515,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(25),
                 child: Container(
                   width: double.infinity,
-                  color: colorFondoFrio,
+                  color: _colorFondoFrio,
                   child: _renderImage(imageStr),
                 ),
               ),
             ),
 
+          // --- Likes, comentarios y descripción ---
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Botones de interacción
                 Row(
                   children: [
-                    LikeButton(postId: postId, activeColor: colorVerdeBosque),
+                    LikeButton(postId: postId, activeColor: _colorVerdeBosque),
                     const SizedBox(width: 15),
+
+                    // Botón de comentarios con contador
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('posts')
@@ -478,13 +551,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: colorVerdeMenta.withOpacity(0.3),
+                                  color: _colorVerdeMenta.withOpacity(0.3),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.chat_bubble_outline_rounded,
                                   size: 20,
-                                  color: colorVerdeBosque,
+                                  color: _colorVerdeBosque,
                                 ),
                               ),
                               if (count > 0) ...[
@@ -503,11 +576,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 12),
+
+                // Descripción del post
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(
-                      color: colorTextoTitulo,
+                    style: const TextStyle(
+                      color: _colorTextoTitulo,
                       fontSize: 14,
                       height: 1.3,
                     ),
@@ -528,7 +604,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: RENDERIZADO DE IMAGEN
+  // ----------------------------------------------------------
   Widget _renderImage(String? imageStr) {
+    // Sin imagen
     if (imageStr == null || imageStr.isEmpty) {
       return Container(
         height: 200,
@@ -537,13 +617,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(
             Icons.fitness_center,
             size: 50,
-            color: colorVerdeBosque.withOpacity(0.2),
+            color: _colorVerdeBosque.withOpacity(0.2),
           ),
         ),
       );
     }
 
-    // 2. Renderizado para URL (Network)
+    // URL de red
     if (imageStr.startsWith('http')) {
       return Image.network(
         imageStr,
@@ -555,14 +635,14 @@ class _HomeScreenState extends State<HomeScreen> {
           return Container(
             height: 250,
             color: Colors.grey[100],
-            child: _buildPlaceholder(),
+            child: _buildImagePlaceholder(),
           );
         },
         errorBuilder: (context, error, stackTrace) => _buildErrorIcon(),
       );
     }
 
-    // 3. Renderizado para Base64 (Memoria)
+    // Base64 (temporal hasta implementar Storage)
     try {
       return Image.memory(
         base64Decode(imageStr),
@@ -590,15 +670,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- Widgets auxiliares---
-
-  Widget _buildPlaceholder() {
+  Widget _buildImagePlaceholder() {
     return Container(
       color: Colors.grey[100],
-      child: Center(
+      child: const Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: colorVerdeBosque.withOpacity(0.3),
+          color: _colorVerdeBosque,
         ),
       ),
     );
@@ -621,13 +699,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: NAVEGACIÓN INFERIOR
+  // ----------------------------------------------------------
   Widget _buildBottomNav() {
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.fromLTRB(15, 0, 15, 20),
         height: 70,
         decoration: BoxDecoration(
-          color: colorVerdeBosque,
+          color: _colorVerdeBosque,
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
@@ -656,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNavItem(IconData iconOutlined, IconData iconFilled, int index) {
-    bool isSelected = _selectedIndex == index;
+    final bool isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: AnimatedContainer(
@@ -664,7 +745,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? colorFondoFrio.withOpacity(0.2)
+              ? _colorFondoFrio.withOpacity(0.2)
               : Colors.transparent,
           shape: BoxShape.circle,
         ),
@@ -686,7 +767,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: colorVerdeMenta,
+          color: _colorVerdeMenta,
           borderRadius: BorderRadius.circular(30),
         ),
         child: const Icon(
@@ -698,24 +779,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: OTRAS PANTALLAS (IndexedStack)
+  // ----------------------------------------------------------
   Widget _buildOtherScreens() {
     return IndexedStack(
       index: _selectedIndex,
       children: [
         const SizedBox.shrink(),
         const Center(child: Text("Búsqueda")),
-        const Center(child: Text("Actividades")),
+        ActivityScreen(userInterests: _userSports),
         ProfileScreen(
           userSports: _userSports,
-          userEmail: user?.email ?? "",
+          userEmail: _user?.email ?? "",
           userName: _currentUserName,
         ),
       ],
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: MODAL DE COMENTARIOS
+  // ----------------------------------------------------------
   void _showComments(BuildContext context, String postId) {
     final TextEditingController commentController = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -738,8 +826,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 .snapshots(),
             builder: (context, snapshot) {
               int total = snapshot.hasData ? snapshot.data!.docs.length : 0;
+
               return Column(
                 children: [
+                  // --- Handle del sheet ---
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 15),
                     height: 5,
@@ -749,6 +839,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+
+                  // --- Título con contador ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -757,39 +849,42 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: colorTextoTitulo,
+                          color: _colorTextoTitulo,
                         ),
                       ),
                       const SizedBox(width: 8),
                       if (total > 0)
                         Badge(
                           label: Text(total.toString()),
-                          backgroundColor: colorVerdeBosque,
+                          backgroundColor: _colorVerdeBosque,
                         ),
                     ],
                   ),
+
                   const Divider(),
+
+                  // --- Lista de comentarios ---
                   Expanded(
                     child: !snapshot.hasData
-                        ? Center(
+                        ? const Center(
                             child: CircularProgressIndicator(
-                              color: colorVerdeBosque,
+                              color: _colorVerdeBosque,
                             ),
                           )
                         : ListView.builder(
                             controller: scrollController,
                             itemCount: total,
                             itemBuilder: (context, index) {
-                              var data =
+                              final data =
                                   snapshot.data!.docs[index].data()
                                       as Map<String, dynamic>;
                               return ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: colorVerdeMenta,
-                                  child: Icon(
+                                  backgroundColor: _colorVerdeMenta,
+                                  child: const Icon(
                                     Icons.person,
                                     size: 20,
-                                    color: colorVerdeBosque,
+                                    color: _colorVerdeBosque,
                                   ),
                                 ),
                                 title: Text(
@@ -804,6 +899,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                   ),
+
+                  // --- Campo para escribir comentario ---
                   Padding(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -819,7 +916,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: InputDecoration(
                               hintText: "Añadir comentario...",
                               filled: true,
-                              fillColor: colorFondoFrio,
+                              fillColor: _colorFondoFrio,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
                                 borderSide: BorderSide.none,
@@ -831,8 +928,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
+
+                        // Botón enviar
                         CircleAvatar(
-                          backgroundColor: colorVerdeBosque,
+                          backgroundColor: _colorVerdeBosque,
                           child: IconButton(
                             icon: const Icon(
                               Icons.send_rounded,
@@ -841,9 +940,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             onPressed: () async {
                               if (commentController.text.isNotEmpty) {
-                                String text = commentController.text;
+                                final text = commentController.text;
                                 commentController.clear();
-                                await _addCommentToFirebase(postId, text);
+                                await _addComment(postId, text);
                               }
                             },
                           ),
@@ -859,74 +958,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  IconData _getSportIcon(String sportType) {
-    switch (sportType.toLowerCase()) {
-      case 'padel':
-      case 'tenis':
-        return Icons.sports_tennis;
-      case 'bádminton':
-        return Icons.wb_iridescent_rounded;
-      case 'ping pong':
-        return Icons.table_restaurant_rounded;
-      case 'fútbol':
-      case 'balonmano':
-        return Icons.sports_soccer;
-      case 'basket':
-        return Icons.sports_basketball;
-      case 'voleibol':
-        return Icons.sports_volleyball;
-      case 'rugby':
-        return Icons.sports_rugby;
-      case 'running':
-        return Icons.directions_run;
-      case 'ciclismo':
-        return Icons.directions_bike;
-      case 'natación':
-        return Icons.pool;
-      case 'triatlón':
-        return Icons.directions_run_rounded;
-      case 'patinaje':
-        return Icons.ice_skating;
-      case 'yoga':
-      case 'pilates':
-        return Icons.self_improvement;
-      case 'crossfit':
-      case 'gimnasio':
-      case 'calistenia':
-        return Icons.fitness_center;
-      case 'boxeo':
-      case 'mma':
-        return Icons.sports_mma;
-      case 'judo':
-      case 'karate':
-        return Icons.front_hand;
-      case 'senderismo':
-        return Icons.terrain;
-      case 'escalada':
-        return Icons.landscape;
-      case 'surf':
-        return Icons.surfing;
-      case 'golf':
-        return Icons.sports_golf;
-      default:
-        return Icons.bolt;
-    }
-  }
 }
 
-// ==========================================
-// WIDGET LIKEBUTTON
-// ==========================================
+// ============================================================
+// WIDGET: LikeButton
+// Gestiona los likes de un post de forma independiente
+// con su propio StreamBuilder en tiempo real
+// ============================================================
 class LikeButton extends StatelessWidget {
   final String postId;
   final Color activeColor;
+
   const LikeButton({
     super.key,
     required this.postId,
     required this.activeColor,
   });
 
+  // ----------------------------------------------------------
+  // BUILD
+  // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
@@ -938,12 +989,16 @@ class LikeButton extends StatelessWidget {
           .collection('likes')
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Icon(Icons.favorite_border_rounded);
+        if (!snapshot.hasData) {
+          return const Icon(Icons.favorite_border_rounded);
+        }
+
         final likes = snapshot.data!.docs;
-        final bool isLiked = likes.any((doc) => doc.id == userId);
+        final isLiked = likes.any((doc) => doc.id == userId);
 
         return Row(
           children: [
+            // --- Botón de like ---
             GestureDetector(
               onTap: () => _toggleLike(postId, userId, isLiked),
               child: Container(
@@ -963,7 +1018,10 @@ class LikeButton extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(width: 8),
+
+            // --- Contador de likes ---
             Text(
               "${likes.length}",
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -974,6 +1032,9 @@ class LikeButton extends StatelessWidget {
     );
   }
 
+  // ----------------------------------------------------------
+  // LÓGICA: TOGGLE LIKE
+  // ----------------------------------------------------------
   Future<void> _toggleLike(String postId, String? userId, bool isLiked) async {
     if (userId == null) return;
     final docRef = FirebaseFirestore.instance
@@ -981,6 +1042,7 @@ class LikeButton extends StatelessWidget {
         .doc(postId)
         .collection('likes')
         .doc(userId);
+
     if (isLiked) {
       await docRef.delete();
     } else {

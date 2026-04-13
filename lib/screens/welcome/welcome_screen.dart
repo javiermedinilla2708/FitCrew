@@ -1,37 +1,37 @@
 import 'package:fitcrew/screens/auth/login_screen.dart';
 import 'package:fitcrew/screens/auth/register_screen.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
+
+// ============================================================
+// WelcomeScreen
+// Pantalla de bienvenida con animación de entrada y acceso
+// a login y registro
+// ============================================================
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
+  // ----------------------------------------------------------
+  // COLORES
+  // ----------------------------------------------------------
+  static const _colorVerdeFondo = Color(0xFFE8F3ED);
+  static const _colorVerdeBurbuja = Color(0xFFD3E6DB);
+  static const _colorVerdePrimario = Color(0xFF234D41);
+  static const _colorTextoTitulo = Color(0xFF0F1D19);
+
+  // ----------------------------------------------------------
+  // BUILD
+  // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    // ----------------------------------------------------------------------
-    // 1. PALETA DE COLORES
-    // ----------------------------------------------------------------------
-    const colorVerdeFondo = Color(0xFFE8F3ED);
-    const colorVerdeBurbuja = Color(0xFFD3E6DB);
-    const colorVerdePrimario = Color(0xFF234D41);
-    const colorTextoTitulo = Color(0xFF0F1D19);
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // ------------------------------------------------------------------
-          // 2. CAPAS DECORATIVAS (Blobs Difuminados + Burbujas Definidas)
-          // ------------------------------------------------------------------
-          _buildBackgroundDecorations(
-            colorVerdeFondo,
-            colorVerdeBurbuja,
-            colorVerdePrimario,
-          ),
+          // --- FONDO: blobs y burbujas decorativas ---
+          _buildBackgroundDecorations(),
 
-          // ------------------------------------------------------------------
-          // 3. CONTENIDO PRINCIPAL CON ANIMACIÓN DE ENTRADA
-          // ------------------------------------------------------------------
+          // --- CONTENIDO: animación de entrada ---
           TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 1000),
             tween: Tween(begin: 0.0, end: 1.0),
@@ -45,105 +45,116 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               );
             },
-            child: _buildMainContent(
-              context,
-              colorTextoTitulo,
-              colorVerdePrimario,
-            ),
+            child: _buildMainContent(context),
           ),
         ],
       ),
     );
   }
 
-  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------
   // SEGMENTO: DECORACIÓN DE FONDO
-  // ----------------------------------------------------------------------
-  Widget _buildBackgroundDecorations(
-    Color fondo,
-    Color burbuja,
-    Color primario,
-  ) {
+  // ----------------------------------------------------------
+  Widget _buildBackgroundDecorations() {
     return Stack(
       children: [
-        Positioned(top: -50, right: -30, child: _buildBlurCircle(fondo, 400)),
+        // --- Blobs difuminados ---
+        Positioned(
+          top: -50,
+          right: -30,
+          child: _buildBlurCircle(_colorVerdeFondo, 400),
+        ),
         Positioned(
           top: 280,
           left: -100,
-          child: _buildBlurCircle(burbuja.withOpacity(0.4), 300),
+          child: _buildBlurCircle(_colorVerdeBurbuja.withOpacity(0.4), 300),
         ),
         Positioned(
           bottom: 220,
           left: 30,
-          child: _buildBlurCircle(burbuja.withOpacity(0.6), 180),
+          child: _buildBlurCircle(_colorVerdeBurbuja.withOpacity(0.6), 180),
         ),
         Positioned(
           bottom: 80,
           right: -40,
-          child: _buildBlurCircle(burbuja, 280),
+          child: _buildBlurCircle(_colorVerdeBurbuja, 280),
         ),
 
+        // --- Burbujas definidas ---
         _buildFloatingBubble(
           top: 120,
           left: 40,
           size: 120,
-          color: primario.withOpacity(0.1),
+          color: _colorVerdePrimario.withOpacity(0.1),
         ),
-        _buildFloatingBubble(top: 400, right: 30, size: 40, color: burbuja),
+        _buildFloatingBubble(
+          top: 400,
+          right: 30,
+          size: 40,
+          color: _colorVerdeBurbuja,
+        ),
         _buildFloatingBubble(
           bottom: 300,
           right: 80,
           size: 60,
-          color: primario.withOpacity(0.05),
+          color: _colorVerdePrimario.withOpacity(0.05),
         ),
         _buildFloatingBubble(
           bottom: 150,
           left: 20,
           size: 120,
-          color: burbuja.withOpacity(0.8),
+          color: _colorVerdeBurbuja.withOpacity(0.8),
         ),
       ],
     );
   }
 
-  // ----------------------------------------------------------------------
-  // SEGMENTO: CONTENIDO
-  // ----------------------------------------------------------------------
-  Widget _buildMainContent(
-    BuildContext context,
-    Color tituloC,
-    Color primario,
-  ) {
+  // ----------------------------------------------------------
+  // SEGMENTO: CONTENIDO PRINCIPAL
+  // ----------------------------------------------------------
+  Widget _buildMainContent(BuildContext context) {
     return SafeArea(
       child: Column(
         children: [
           const SizedBox(height: 40),
-          _buildLogo(primario),
+
+          // --- Logo textual ---
+          _buildLogo(),
+
           const SizedBox(height: 20),
+
+          // --- Título principal ---
           _buildTextSection(
             "Tu cuerpo,\ntu equipo.",
-            tituloC,
+            _colorTextoTitulo,
             48,
             FontWeight.w900,
           ),
+
           const Spacer(),
-          _buildBottomSection(tituloC),
+
+          // --- Subtítulo y descripción ---
+          _buildBottomSection(),
+
           const SizedBox(height: 50),
-          _buildActionButtons(context, primario),
+
+          // --- Botones de acción ---
+          _buildActionButtons(context),
+
           const SizedBox(height: 30),
         ],
       ),
     );
   }
 
-  // ----------------------------------------------------------------------
-  // COMPONENTES INDIVIDUALES
-  // ----------------------------------------------------------------------
-  Widget _buildLogo(Color primario) {
+  // ----------------------------------------------------------
+  // SEGMENTO: LOGO
+  // ----------------------------------------------------------
+  Widget _buildLogo() {
     return Text(
       "FITCREW",
       style: TextStyle(
-        color: primario.withOpacity(0.5),
+        color: _colorVerdePrimario.withOpacity(0.5),
         fontWeight: FontWeight.w800,
         letterSpacing: 4,
         fontSize: 14,
@@ -151,14 +162,17 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomSection(Color tituloC) {
+  // ----------------------------------------------------------
+  // SEGMENTO: SECCIÓN INFERIOR
+  // ----------------------------------------------------------
+  Widget _buildBottomSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: [
           _buildTextSection(
             "Alcanza tu máximo\npotencial",
-            tituloC,
+            _colorTextoTitulo,
             28,
             FontWeight.bold,
           ),
@@ -177,32 +191,39 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, Color primario) {
+  // ----------------------------------------------------------
+  // SEGMENTO: BOTONES DE ACCIÓN
+  // ----------------------------------------------------------
+  Widget _buildActionButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Row(
         children: [
+          // --- Botón Entrar ---
           Expanded(
             child: _buildButton(
               label: "Entrar",
-              color: primario,
+              color: _colorVerdePrimario,
               textColor: Colors.white,
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
               ),
             ),
           ),
+
           const SizedBox(width: 15),
+
+          // --- Botón Registrarse ---
           Expanded(
             child: _buildButton(
               label: "Registrarse",
               color: Colors.transparent,
-              textColor: primario,
+              textColor: _colorVerdePrimario,
               isOutlined: true,
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                MaterialPageRoute(builder: (_) => const RegisterScreen()),
               ),
             ),
           ),
@@ -211,9 +232,9 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------
   // HELPERS DE DISEÑO
-  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------
   Widget _buildTextSection(
     String text,
     Color color,
@@ -246,7 +267,10 @@ class WelcomeScreen extends StatelessWidget {
           ? OutlinedButton(
               onPressed: onPressed,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+                side: BorderSide(
+                  color: _colorVerdePrimario.withOpacity(0.4),
+                  width: 1.5,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),

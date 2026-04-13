@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/services/user_services.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // --- REGISTRO ---
+  final UserService _userService = UserService();
+
   Future<User?> registerWithEmail(
     String email,
     String password,
@@ -13,99 +15,47 @@ class AuthService {
   ) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
-
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
+      final result = await _auth.createUserWithEmailAndPassword(
         email: normalizedEmail,
         password: password,
       );
-
-      User? user = result.user;
-
+      final user = result.user;
       if (user != null) {
         await user.updateDisplayName(name);
 
-        // Guardamos el documento inicial en Firestore
-        await _db.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-          'name': name,
-          'email': normalizedEmail,
-          'createdAt': FieldValue.serverTimestamp(),
-          'favoriteSports': [],
-          'profilePic': null,
-          'bio': "",
-        });
+        await _userService.createUserData(user.uid, name, normalizedEmail);
       }
       return user;
     } on FirebaseAuthException catch (e) {
-      // Mapeo de errores para que la UI reciba mensajes legibles
-      String errorMessage = "Ocurrió un error inesperado";
-      if (e.code == 'email-already-in-use') {
-        errorMessage = "Este correo electrónico ya está registrado.";
-      } else if (e.code == 'weak-password') {
-        errorMessage = "La contraseña es demasiado débil.";
-      } else if (e.code == 'invalid-email') {
-        errorMessage = "El formato del correo electrónico no es válido.";
-      }
-      throw errorMessage;
+      throw _mapAuthError(e);
     } catch (e) {
       throw "Error general: ${e.toString()}";
     }
   }
 
-  // --- LOGIN ---
   Future<User?> loginWithEmail(String email, String password) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
-
-      UserCredential result = await _auth.signInWithEmailAndPassword(
+      final result = await _auth.signInWithEmailAndPassword(
         email: normalizedEmail,
         password: password,
       );
       return result.user;
     } on FirebaseAuthException catch (e) {
-      String errorMessage = "Error al iniciar sesión";
-      if (e.code == 'user-not-found') {
-        errorMessage = "No existe ningún usuario con este correo.";
-      } else if (e.code == 'wrong-password') {
-        errorMessage = "La contraseña es incorrecta.";
-      } else if (e.code == 'user-disabled') {
-        errorMessage = "Esta cuenta ha sido deshabilitada.";
-      } else if (e.code == 'invalid-credential') {
-        errorMessage = "Credenciales incorrectas o expiradas.";
-      }
-      throw errorMessage;
+      throw _mapAuthError(e);
     } catch (e) {
       throw "Error inesperado al intentar entrar.";
     }
   }
 
-  // --- OBTENER DEPORTES DEL USUARIO ---
   Future<List<String>> getUserSports(String uid) async {
-    try {
-      DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        // Casteo seguro de la lista
-        return List<String>.from(data['favoriteSports'] ?? []);
-      }
-      return [];
-    } catch (e) {
-      print("Error al obtener deportes: $e");
-      return [];
-    }
+    return _userService.getUserSports(uid);
   }
 
-  // --- ACTUALIZAR DEPORTES FAVORITOS ---
   Future<void> updateFavoriteSports(String uid, List<String> sports) async {
-    try {
-      await _db.collection('users').doc(uid).update({'favoriteSports': sports});
-    } catch (e) {
-      print("Error al actualizar deportes: $e");
-      throw "No se pudieron guardar tus deportes favoritos.";
-    }
+    await _userService.updateFavoriteSports(uid, sports);
   }
 
-  // --- CERRAR SESIÓN ---
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -114,16 +64,25 @@ class AuthService {
     }
   }
 
-  // --- BORRAR CUENTA ---
   Future<void> deleteUserAccount() async {
     try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        // 1. Borramos datos en Firestore primero
-        await _db.collection('users').doc(user.uid).delete();
-        // 2. Borramos la cuenta de Auth
-        await user.delete();
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      final postsQuery = await _db
+          .collection('posts')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      final batch = _db.batch();
+      for (var doc in postsQuery.docs) {
+        batch.delete(doc.reference);
       }
+      await batch.commit();
+
+      await _userService.deleteUserData(user.uid);
+
+      await user.delete();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
         throw "Por seguridad, debes haber iniciado sesión recientemente para borrar tu cuenta.";
@@ -131,6 +90,27 @@ class AuthService {
       rethrow;
     } catch (e) {
       throw "No se pudo eliminar la cuenta.";
+    }
+  }
+
+  String _mapAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return "Este correo electrónico ya está registrado.";
+      case 'weak-password':
+        return "La contraseña es demasiado débil.";
+      case 'invalid-email':
+        return "El formato del correo electrónico no es válido.";
+      case 'user-not-found':
+        return "No existe ningún usuario con este correo.";
+      case 'wrong-password':
+        return "La contraseña es incorrecta.";
+      case 'user-disabled':
+        return "Esta cuenta ha sido deshabilitada.";
+      case 'invalid-credential':
+        return "Credenciales incorrectas o expiradas.";
+      default:
+        return "Ocurrió un error inesperado.";
     }
   }
 }
