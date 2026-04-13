@@ -5,6 +5,7 @@ import 'package:fitcrew/activities/activities_screen.dart';
 import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:fitcrew/screens/profile/profile_screen.dart';
+import 'package:fitcrew/screens/ranking/ranking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/viewmodels/post_viewmodel.dart';
@@ -787,7 +788,7 @@ class _HomeScreenState extends State<HomeScreen> {
       index: _selectedIndex,
       children: [
         const SizedBox.shrink(),
-        const Center(child: Text("Búsqueda")),
+        const RankingScreen(),
         ActivityScreen(userInterests: _userSports),
         ProfileScreen(
           userSports: _userSports,

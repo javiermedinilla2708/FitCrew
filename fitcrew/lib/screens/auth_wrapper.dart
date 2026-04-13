@@ -13,13 +13,6 @@ import 'package:flutter/material.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
-
-  // ----------------------------------------------------------
-  // COLORES
-  // ----------------------------------------------------------
-  static const _colorMentol = Color(0xFFDBF0DD);
-  static const _colorPrimario = Color(0xFF235347);
-
   // ----------------------------------------------------------
   // BUILD
   // ----------------------------------------------------------
@@ -78,11 +71,21 @@ class AuthWrapper extends StatelessWidget {
   // WIDGET: indicador de carga
   // ----------------------------------------------------------
   Widget _buildLoadingIndicator() {
-    return Center(
+    return Container(
+      width: 140,
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFFDBF0DD).withOpacity(0.2),
+            blurRadius: 15,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
       child: LinearProgressIndicator(
-        color: _colorMentol,
-        backgroundColor: _colorPrimario.withOpacity(0.1),
-        minHeight: 6,
+        color: Color(0xFFDBF0DD),
+        backgroundColor: Colors.white.withOpacity(0.05),
+        minHeight: 3,
         borderRadius: BorderRadius.circular(10),
       ),
     );

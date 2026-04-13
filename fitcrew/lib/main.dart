@@ -3,6 +3,7 @@ import 'package:fitcrew/viewmodels/activity_view_model.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
 import 'package:fitcrew/viewmodels/filter_viewmodel.dart';
 import 'package:fitcrew/viewmodels/post_viewmodel.dart';
+import 'package:fitcrew/viewmodels/stats_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,7 @@ void main() async {
         // Otros ViewModels
         ChangeNotifierProvider(create: (_) => FilterViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => StatsViewModel()),
       ],
       child: const MainApp(),
     ),
