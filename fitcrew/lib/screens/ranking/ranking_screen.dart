@@ -139,9 +139,19 @@ class _RankingScreenState extends State<RankingScreen>
 
             // --- Lista del ranking ---
             if (vm.isLoadingRanking)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
-                  child: CircularProgressIndicator(color: _colorVerdeBosque),
+                  child: SizedBox(
+                    width: 140,
+                    child: SizedBox(
+                      width: 80,
+                      child: LinearProgressIndicator(
+                        color: _colorVerdeBosque,
+                        minHeight: 3,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ),
               )
             else if (vm.rankingError != null)
@@ -179,9 +189,14 @@ class _RankingScreenState extends State<RankingScreen>
             // --- Lista del ranking ---
             Expanded(
               child: vm.isLoadingRanking
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: _colorVerdeBosque,
+                  ? Center(
+                      child: SizedBox(
+                        width: 80,
+                        child: LinearProgressIndicator(
+                          color: _colorVerdeBosque,
+                          minHeight: 3,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     )
                   : vm.rankingError != null
@@ -211,8 +226,18 @@ class _RankingScreenState extends State<RankingScreen>
           color: _colorVerdeBosque,
           borderRadius: BorderRadius.circular(24),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        child: Center(
+          child: SizedBox(
+            width: 80,
+            child: SizedBox(
+              width: 80,
+              child: LinearProgressIndicator(
+                color: Colors.white,
+                minHeight: 3,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
         ),
       );
     }

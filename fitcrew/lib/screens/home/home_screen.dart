@@ -233,8 +233,15 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       backgroundColor: _colorFondoFrio,
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: _colorVerdeBosque),
+          ? Center(
+              child: SizedBox(
+                width: 140,
+                child: LinearProgressIndicator(
+                  color: _colorVerdeBosque,
+                  minHeight: 3,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             )
           : _selectedIndex == 0
           ? _buildHomeFeed()
