@@ -12,9 +12,9 @@ class ApiService {
   // ----------------------------------------------------------
   // URL BASE
   // ----------------------------------------------------------
-  static const String _baseUrl = 'http://10.0.2.2:8000'; // Emulador Android
-  // static const String _baseUrl = 'http://localhost:8000'; // Web/Desktop
-  // static const String _baseUrl = 'http://TU_IP_LOCAL:8000'; // Dispositivo físico
+  // URL pública de Railway
+  static const String _baseUrl =
+      'https://fitcrew-production-5fe4.up.railway.app';
 
   // ----------------------------------------------------------
   // HELPER: Obtener token de Firebase Auth

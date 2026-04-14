@@ -4,6 +4,7 @@
 // ============================================================
 
 import 'dart:async';
+
 import 'package:fitcrew/services/activity_service.dart';
 import 'package:fitcrew/models/sport_activity.dart';
 import 'package:flutter/material.dart';
@@ -101,6 +102,14 @@ class ActivityViewModel extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       _notify();
+      return false;
+    }
+  }
+
+  Future<bool> leaveActivity(String activityId) async {
+    try {
+      return await _activityService.leaveActivity(activityId);
+    } catch (e) {
       return false;
     }
   }

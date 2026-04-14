@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fitcrew/activities/activities_screen.dart';
+import 'package:fitcrew/screens/activities/activities_screen.dart';
 import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:fitcrew/screens/profile/profile_screen.dart';

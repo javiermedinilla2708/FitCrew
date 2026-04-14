@@ -55,4 +55,26 @@ class ActivityService {
       });
     });
   }
+
+  Future<bool> leaveActivity(String activityId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+    try {
+      await _db.runTransaction((tx) async {
+        final ref = _db.collection('activities').doc(activityId);
+        final snap = await tx.get(ref);
+        final data = snap.data()!;
+        final occupied = (data['occupiedSlots'] as int);
+        final participants = List<String>.from(data['participants'] ?? []);
+        participants.remove(uid);
+        tx.update(ref, {
+          'occupiedSlots': occupied - 1,
+          'participants': participants,
+        });
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
