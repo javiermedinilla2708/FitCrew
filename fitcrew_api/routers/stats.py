@@ -3,11 +3,11 @@
 # Endpoints de estadísticas de usuario y actividades
 # ============================================================
 
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Header
-from firebase_admin import auth, firestore
+from firebase_admin import auth
 from models.schemas import UserStats, ActivityStats, ActivityRecommendation
 from firebase_config import db
-from typing import Optional
 
 router = APIRouter(prefix="/stats", tags=["Estadísticas"])
 
@@ -16,7 +16,6 @@ router = APIRouter(prefix="/stats", tags=["Estadísticas"])
 # HELPER: Verificar token de Firebase Auth
 # ----------------------------------------------------------
 def verify_token(authorization: str) -> str:
-    """Verifica el Bearer token de Firebase y devuelve el UID."""
     try:
         token = authorization.replace("Bearer ", "")
         decoded = auth.verify_id_token(token)
@@ -34,7 +33,6 @@ async def get_user_stats(
     uid: str,
     authorization: str = Header(...),
 ):
-    # --- Verificamos que el token es válido ---
     verify_token(authorization)
 
     try:
@@ -46,24 +44,19 @@ async def get_user_stats(
         user_data = user_doc.to_dict()
 
         # --- Total de posts ---
-        posts = db.collection("posts").where("userId", "==", uid).get()
+        posts       = db.collection("posts").where("userId", "==", uid).get()
         total_posts = len(posts)
 
         # --- Actividades organizadas ---
-        organized = (
-            db.collection("activities").where("organizerId", "==", uid).get()
-        )
+        organized      = db.collection("activities").where("organizerId", "==", uid).get()
         total_organized = len(organized)
 
         # --- Actividades en las que participó ---
-        joined = (
-            db.collection("activities")
-            .where("participants", "array_contains", uid)
-            .get()
-        )
+        # Una sola consulta sin filtro de fecha para evitar índice compuesto
+        joined      = db.collection("activities").where("participants", "array_contains", uid).get()
         total_joined = len(joined)
 
-        # --- Deporte favorito (el más frecuente en actividades) ---
+        # --- Deporte favorito ---
         sport_counts: dict[str, int] = {}
         for activity in joined:
             sport = activity.to_dict().get("sportType", "")
@@ -74,26 +67,34 @@ async def get_user_stats(
             max(sport_counts, key=sport_counts.get) if sport_counts else None
         )
 
-        # --- Racha de días consecutivos (simplificada) ---
-        # Contamos días únicos con actividad en los últimos 30 días
-        from datetime import datetime, timedelta
+        # --- Racha de días consecutivos calculada en Python ---
+        # Evita el índice compuesto (participants + date) de Firestore
         now = datetime.utcnow()
         streak = 0
+
+        # Construimos un set de fechas con actividad
+        days_with_activity: set[str] = set()
+        for activity in joined:
+            data = activity.to_dict()
+            date = data.get("date")
+            if date:
+                try:
+                    # Firestore devuelve Timestamp, convertimos a datetime
+                    if hasattr(date, "todate"):
+                        date = date.ToDatetime()
+                    day_str = date.strftime("%Y-%m-%d")
+                    days_with_activity.add(day_str)
+                except Exception:
+                    pass
+
+        # Contamos días consecutivos hacia atrás desde hoy
         for i in range(30):
-            day = now - timedelta(days=i)
-            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-            day_end   = day.replace(hour=23, minute=59, second=59)
-            activity_that_day = (
-                db.collection("activities")
-                .where("participants", "array_contains", uid)
-                .where("date", ">=", day_start)
-                .where("date", "<=", day_end)
-                .get()
-            )
-            if activity_that_day:
+            day     = now - timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            if day_str in days_with_activity:
                 streak += 1
             else:
-                break  # La racha se rompe
+                break
 
         return UserStats(
             uid=uid,
@@ -127,7 +128,7 @@ async def get_activity_stats(
         if not doc.exists:
             raise HTTPException(status_code=404, detail="Actividad no encontrada")
 
-        data = doc.to_dict()
+        data     = doc.to_dict()
         total    = data.get("totalSlots", 1)
         occupied = data.get("occupiedSlots", 0)
 
@@ -159,26 +160,23 @@ async def get_recommendations(
     verify_token(authorization)
 
     try:
-        # --- Deportes favoritos del usuario ---
         user_doc = db.collection("users").document(uid).get()
         if not user_doc.exists:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         favorite_sports: list[str] = user_doc.to_dict().get("favoriteSports", [])
 
-        # --- Actividades que no están llenas ---
-        activities = db.collection("activities").get()
+        activities    = db.collection("activities").get()
         recommendations = []
 
         for doc in activities:
-            data = doc.to_dict()
-            sport      = data.get("sportType", "")
-            occupied   = data.get("occupiedSlots", 0)
-            total      = data.get("totalSlots", 1)
-            organizer  = data.get("organizerId", "")
+            data         = doc.to_dict()
+            sport        = data.get("sportType", "")
+            occupied     = data.get("occupiedSlots", 0)
+            total        = data.get("totalSlots", 1)
+            organizer    = data.get("organizerId", "")
             participants = data.get("participants", [])
 
-            # Excluimos actividades llenas, propias o en las que ya está
             if occupied >= total:
                 continue
             if organizer == uid:
@@ -186,7 +184,6 @@ async def get_recommendations(
             if uid in participants:
                 continue
 
-            # Puntuación: 1.0 si el deporte coincide, 0.5 si no
             match_score = 1.0 if sport in favorite_sports else 0.5
 
             recommendations.append(
@@ -202,9 +199,8 @@ async def get_recommendations(
                 )
             )
 
-        # Ordenamos por puntuación descendente
         recommendations.sort(key=lambda x: x.match_score, reverse=True)
-        return recommendations[:10]  # Máximo 10 recomendaciones
+        return recommendations[:10]
 
     except HTTPException:
         raise
