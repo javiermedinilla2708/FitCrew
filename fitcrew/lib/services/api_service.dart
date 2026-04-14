@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 // ============================================================
@@ -49,11 +50,15 @@ class ApiService {
         Uri.parse('$_baseUrl/stats/user/$uid'),
         headers: await _headers(),
       );
+      debugPrint("FITCREW API: getUserStats status=${response.statusCode}");
+      debugPrint("FITCREW API: body=${response.body}");
+
       if (response.statusCode == 200) {
         return UserStats.fromJson(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
+      debugPrint("FITCREW API: Error getUserStats: $e");
       return null;
     }
   }
