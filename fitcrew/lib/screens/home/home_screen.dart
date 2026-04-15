@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       .deletePost(postId);
                   if (success && mounted) {
                     _showSnackBar("Actividad eliminada con éxito");
-                    // ✅ Recargar stats tras eliminar
+                    // Recargar stats tras eliminar
                     await Future.delayed(const Duration(seconds: 1));
                     if (mounted) _reloadStats();
                   }
@@ -394,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // --- Botones de acción ---
           Row(
             children: [
-              // ✅ Botón buscar personas
+              // Botón buscar personas
               Container(
                 decoration: BoxDecoration(
                   color: _colorVerdeMenta.withOpacity(0.3),
@@ -419,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(width: 8),
 
-              // --- Botón notificaciones (reservado para el futuro) ---
+              // --- Botón notificaciones ---
               Container(
                 decoration: BoxDecoration(
                   color: _colorVerdeMenta.withOpacity(0.3),
@@ -867,7 +867,6 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => const CreatePostScreen()),
         );
         if (mounted) {
-          // Pequeña espera para que Firestore procese el nuevo post
           await Future.delayed(const Duration(seconds: 1));
           _reloadStats();
         }
