@@ -5,6 +5,7 @@ import 'package:fitcrew/screens/activities/activities_screen.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:fitcrew/screens/profile/profile_screen.dart';
 import 'package:fitcrew/screens/ranking/ranking_screen.dart';
+import 'package:fitcrew/screens/search/search_user_screen.dart';
 import 'package:fitcrew/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -362,10 +363,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // ----------------------------------------------------------
   Widget _buildTopHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
+      padding: const EdgeInsets.only(top: 12, left: 25, right: 25),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // --- Logo FitCrew ---
           RichText(
             text: const TextSpan(
               children: [
@@ -389,18 +391,49 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          Container(
-            decoration: BoxDecoration(
-              color: _colorVerdeMenta.withOpacity(0.3),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_none_rounded,
-                color: _colorVerdeBosque,
+          // --- Botones de acción ---
+          Row(
+            children: [
+              // ✅ Botón buscar personas
+              Container(
+                decoration: BoxDecoration(
+                  color: _colorVerdeMenta.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.people_outline_rounded,
+                    color: _colorVerdeBosque,
+                  ),
+                  onPressed: () {
+                    // Abre la pantalla de búsqueda de usuarios
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchUsersScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
-              onPressed: () {},
-            ),
+
+              const SizedBox(width: 8),
+
+              // --- Botón notificaciones (reservado para el futuro) ---
+              Container(
+                decoration: BoxDecoration(
+                  color: _colorVerdeMenta.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: _colorVerdeBosque,
+                  ),
+                  onPressed: () {},
+                ),
+              ),
+            ],
           ),
         ],
       ),
