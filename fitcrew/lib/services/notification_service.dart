@@ -3,13 +3,14 @@
 // Gestiona la creación y lectura de notificaciones en Firestore
 // ============================================================
 
-// ----------------------------------------------------------
-// SERVICIO
-// ----------------------------------------------------------
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/app_notification.dart';
 import 'package:fitcrew/models/notification_type.dart';
+
+// ----------------------------------------------------------
+// SERVICIO
+// ----------------------------------------------------------
 
 class NotificationService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
