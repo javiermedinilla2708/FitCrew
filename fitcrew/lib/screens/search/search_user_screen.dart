@@ -6,7 +6,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/services/follow_services.dart';
-
 import 'package:flutter/material.dart';
 
 class SearchUsersScreen extends StatefulWidget {
@@ -16,7 +15,8 @@ class SearchUsersScreen extends StatefulWidget {
   State<SearchUsersScreen> createState() => _SearchUsersScreenState();
 }
 
-class _SearchUsersScreenState extends State<SearchUsersScreen> {
+class _SearchUsersScreenState extends State<SearchUsersScreen>
+    with SingleTickerProviderStateMixin {
   // ----------------------------------------------------------
   // COLORES
   // ----------------------------------------------------------
@@ -30,6 +30,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   // ----------------------------------------------------------
   final FollowService _followService = FollowService();
   final TextEditingController _searchController = TextEditingController();
+  late TabController _tabController;
 
   List<Map<String, dynamic>> _results = [];
   List<Map<String, dynamic>> _suggestions = [];
@@ -37,7 +38,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _loadingSuggestions = false;
   String _lastQuery = '';
 
-  // Cache del estado de seguimiento
   final Map<String, String> _followStatusCache = {};
 
   // ----------------------------------------------------------
@@ -46,17 +46,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadSuggestions();
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   // ----------------------------------------------------------
-  // CARGAR SUGERENCIAS — usuarios con deportes en común
+  // CARGAR SUGERENCIAS
   // ----------------------------------------------------------
   Future<void> _loadSuggestions() async {
     if (_loadingSuggestions) return;
@@ -99,7 +101,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
               doc.id,
             );
           }
-
           suggestions.add({
             'uid': doc.id,
             'name': data['name'] ?? 'Usuario',
@@ -204,7 +205,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Buscar personas",
+          "Personas",
           style: TextStyle(
             color: _colorVerdeBosque,
             fontWeight: FontWeight.bold,
@@ -212,29 +213,151 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
             letterSpacing: -0.5,
           ),
         ),
-      ),
-      body: Column(
-        children: [
-          // --- Barra de búsqueda ---
-          _buildSearchBar(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _followService.getPendingRequestsStream(),
+            builder: (context, snapshot) {
+              final pendingCount = snapshot.hasData
+                  ? snapshot.data!.docs.length
+                  : 0;
 
-          // --- Solicitudes pendientes recibidas ---
-          _buildPendingRequests(),
-
-          // --- Contenido principal ---
-          Expanded(
-            child: _isSearching
-                ? const Center(
-                    child: CircularProgressIndicator(color: _colorVerdeBosque),
-                  )
-                : _lastQuery.isNotEmpty
-                ? _results.isEmpty
-                      ? _buildEmptyState()
-                      : _buildResultsList()
-                : _buildInitialState(),
+              return TabBar(
+                controller: _tabController,
+                indicatorColor: _colorVerdeBosque,
+                indicatorWeight: 3,
+                labelColor: _colorVerdeBosque,
+                unselectedLabelColor: Colors.grey,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                tabs: [
+                  const Tab(text: "Buscar"),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Solicitudes"),
+                        if (pendingCount > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              "$pendingCount",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-        ],
+        ),
       ),
+      // Se encarga de la seleccion de las pestañas
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildSearchTab(), _buildRequestsTab()],
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // PESTAÑA 1: BUSCAR
+  // ----------------------------------------------------------
+  Widget _buildSearchTab() {
+    return Column(
+      children: [
+        _buildSearchBar(),
+
+        Expanded(
+          child: _isSearching
+              ? const Center(
+                  child: CircularProgressIndicator(color: _colorVerdeBosque),
+                )
+              : _lastQuery.isNotEmpty
+              ? _results.isEmpty
+                    ? _buildEmptyState()
+                    : _buildResultsList()
+              : _buildInitialState(),
+        ),
+      ],
+    );
+  }
+
+  // ----------------------------------------------------------
+  // PESTAÑA 2: SOLICITUDES RECIBIDAS
+  // ----------------------------------------------------------
+  Widget _buildRequestsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _followService.getPendingRequestsStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: _colorVerdeBosque),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.mark_email_read_outlined,
+                  size: 64,
+                  color: _colorVerdeMenta,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Sin solicitudes pendientes",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: _colorVerdeBosque,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Cuando alguien quiera seguirte\naparecerá aquí",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final requests = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final data = requests[index].data() as Map<String, dynamic>;
+            final requestId = requests[index].id;
+            final fromUid = data['fromUid'] as String;
+            final fromName = data['fromName'] as String? ?? 'Usuario';
+
+            return _buildRequestCard(requestId, fromUid, fromName);
+          },
+        );
+      },
     );
   }
 
@@ -243,7 +366,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   // ----------------------------------------------------------
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Container(
         height: 52,
         decoration: BoxDecoration(
@@ -270,7 +393,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: _search,
-                autofocus: true,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: "Buscar por nombre...",
@@ -306,105 +428,57 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: SOLICITUDES PENDIENTES RECIBIDAS
+  // TARJETA DE SOLICITUD
   // ----------------------------------------------------------
-  Widget _buildPendingRequests() {
-    return StreamBuilder(
-      stream: _followService.getPendingRequestsStream(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final requests = snapshot.data!.docs;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Row(
-                children: [
-                  const Text(
-                    "Solicitudes recibidas",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: _colorVerdeBosque,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _colorVerdeBosque,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      "${requests.length}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: requests.length,
-              itemBuilder: (context, index) {
-                final data = requests[index].data() as Map<String, dynamic>;
-                final requestId = requests[index].id;
-                final fromUid = data['fromUid'] as String;
-                final fromName = data['fromName'] as String? ?? 'Usuario';
-
-                return _buildRequestCard(requestId, fromUid, fromName);
-              },
-            ),
-
-            const Divider(height: 24),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildRequestCard(String requestId, String fromUid, String fromName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _colorVerdeBosque.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 24,
+            radius: 26,
             backgroundColor: _colorVerdeMenta,
             child: Text(
               fromName[0].toUpperCase(),
               style: const TextStyle(
                 color: _colorVerdeBosque,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: 20,
               ),
             ),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
           Expanded(
-            child: Text(
-              fromName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                color: _colorTextoTitulo,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fromName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: _colorTextoTitulo,
+                  ),
+                ),
+                Text(
+                  "Quiere seguirte",
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ],
             ),
           ),
 
@@ -468,7 +542,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: ESTADO INICIAL CON SUGERENCIAS
+  // ESTADO INICIAL CON SUGERENCIAS
   // ----------------------------------------------------------
   Widget _buildInitialState() {
     if (_loadingSuggestions) {
@@ -561,7 +635,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: LISTA DE RESULTADOS DE BÚSQUEDA
+  // LISTA DE RESULTADOS
   // ----------------------------------------------------------
   Widget _buildResultsList() {
     return ListView.builder(
@@ -723,7 +797,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
             ],
           ),
 
-          // ✅ Chips de deportes en común
           if (commonSports.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -768,7 +841,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   // ----------------------------------------------------------
-  // HELPER: Botón de seguimiento reutilizable
+  // HELPER: Botón de seguimiento
   // ----------------------------------------------------------
   Widget _buildFollowButton(
     String uid,
@@ -840,7 +913,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: ESTADO VACÍO — sin resultados de búsqueda
+  // ESTADO VACÍO
   // ----------------------------------------------------------
   Widget _buildEmptyState() {
     return Center(
