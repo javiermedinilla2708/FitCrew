@@ -712,6 +712,7 @@ class ProfileScreen extends StatelessWidget {
   ) async {
     try {
       await authVM.logout();
+      await Future.delayed(const Duration(milliseconds: 300));
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
         (route) => false,
@@ -832,6 +833,7 @@ class ProfileScreen extends StatelessWidget {
               final success = await authVM.deleteAccount();
 
               if (success) {
+                await Future.delayed(const Duration(milliseconds: 300));
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (context) => const WelcomeScreen(),
