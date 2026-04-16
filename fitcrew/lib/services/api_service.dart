@@ -109,17 +109,17 @@ class ApiService {
     try {
       final headers = await _headers();
       final token = headers['Authorization'];
-      print('🔑 Token: ${token?.substring(0, 20)}...'); // Ver si hay token
+      print('Token: ${token?.substring(0, 20)}...'); // Ver si hay token
 
       final uri = Uri.parse('$_baseUrl/ranking/global');
-      print('🌐 Llamando a: $uri'); // Ver la URL
+      print('Llamando a: $uri'); // Ver la URL
 
       final response = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 30)); // Timeout de 30 segundos
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Body: ${response.body.substring(0, 100)}');
+      print('Status code: ${response.statusCode}');
+      print('Body: ${response.body.substring(0, 100)}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -127,7 +127,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('❌ Error en getGlobalRanking: $e'); // Ver el error exacto
+      print('Error en getGlobalRanking: $e'); // Ver el error exacto
       return [];
     }
   }
