@@ -1,4 +1,5 @@
 import 'package:fitcrew/screens/splash_screen.dart';
+import 'package:fitcrew/services/push_notification_service.dart';
 import 'package:fitcrew/viewmodels/activity_view_model.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
 import 'package:fitcrew/viewmodels/filter_viewmodel.dart';
@@ -13,15 +14,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  await PushNotificationService.initialize();
+
   runApp(
     MultiProvider(
       providers: [
-        // ViewModel de actividades (eventos deportivos)
-        ChangeNotifierProvider(create: (_) => ActivityViewModel()), // 1. Añadir
-        // ViewModel de la feed social (Posts)
+        ChangeNotifierProvider(create: (_) => ActivityViewModel()),
         ChangeNotifierProvider(create: (_) => PostViewModel()),
-
-        // Otros ViewModels
         ChangeNotifierProvider(create: (_) => FilterViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => StatsViewModel()),

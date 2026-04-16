@@ -25,6 +25,9 @@ dependencies:
   latlong2: 0.9.1
   http: ^1.2.0
   flutter_typeahead: ^5.2.0
+  timeago: ^3.7.1
+  firebase_messaging: ^15.0.0
+  flutter_local_notifications: ^20.1.0
 
 dev_dependencies:
   flutter_test:

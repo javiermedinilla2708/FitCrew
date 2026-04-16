@@ -6,13 +6,16 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/services/notification_service.dart';
 
 class FollowService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String? _currentUid = FirebaseAuth.instance.currentUser?.uid;
+  final NotificationService _notifService = NotificationService();
 
   // ----------------------------------------------------------
   // ENVIAR SOLICITUD DE SEGUIMIENTO
+  // Genera notificación al receptor
   // ----------------------------------------------------------
   Future<bool> sendFollowRequest(String toUid, String toName) async {
     if (_currentUid == null) return false;
@@ -42,6 +45,9 @@ class FollowService {
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
+
+      // Notificar al receptor
+      await _notifService.notifyFollowRequest(toUid: toUid, fromName: fromName);
 
       return true;
     } catch (e) {
@@ -73,6 +79,7 @@ class FollowService {
 
   // ----------------------------------------------------------
   // ACEPTAR SOLICITUD DE SEGUIMIENTO
+  // Genera notificación al emisor original
   // ----------------------------------------------------------
   Future<bool> acceptFollowRequest(String requestId, String fromUid) async {
     if (_currentUid == null) return false;
@@ -100,6 +107,19 @@ class FollowService {
       batch.set(followingRef, {'timestamp': FieldValue.serverTimestamp()});
 
       await batch.commit();
+
+      // Notificar al emisor que su solicitud fue aceptada
+      final currentUserDoc = await _db
+          .collection('users')
+          .doc(_currentUid)
+          .get();
+      final myName = currentUserDoc.data()?['name'] ?? 'Usuario';
+
+      await _notifService.notifyFollowAccepted(
+        toUid: fromUid,
+        fromName: myName,
+      );
+
       return true;
     } catch (e) {
       return false;
@@ -129,7 +149,6 @@ class FollowService {
     try {
       final batch = _db.batch();
 
-      // Eliminar de following del usuario actual
       batch.delete(
         _db
             .collection('users')
@@ -138,7 +157,6 @@ class FollowService {
             .doc(targetUid),
       );
 
-      // Eliminar de followers del usuario objetivo
       batch.delete(
         _db
             .collection('users')
@@ -147,7 +165,6 @@ class FollowService {
             .doc(_currentUid),
       );
 
-      // Eliminar la solicitud aceptada
       final requests = await _db
           .collection('follow_requests')
           .where('fromUid', isEqualTo: _currentUid)
@@ -173,7 +190,6 @@ class FollowService {
   Future<String> getFollowStatus(String targetUid) async {
     if (_currentUid == null) return 'none';
     try {
-      // Comprobamos si ya seguimos al usuario
       final followingDoc = await _db
           .collection('users')
           .doc(_currentUid)
@@ -183,7 +199,6 @@ class FollowService {
 
       if (followingDoc.exists) return 'following';
 
-      // Comprobamos si hay solicitud pendiente
       final pendingRequest = await _db
           .collection('follow_requests')
           .where('fromUid', isEqualTo: _currentUid)
@@ -203,9 +218,7 @@ class FollowService {
   // STREAM: SOLICITUDES RECIBIDAS PENDIENTES
   // ----------------------------------------------------------
   Stream<QuerySnapshot> getPendingRequestsStream() {
-    if (_currentUid == null) {
-      return const Stream.empty();
-    }
+    if (_currentUid == null) return const Stream.empty();
     return _db
         .collection('follow_requests')
         .where('toUid', isEqualTo: _currentUid)
@@ -244,7 +257,6 @@ class FollowService {
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     if (query.trim().isEmpty) return [];
     try {
-      // Búsqueda por nombre con rango de caracteres
       final results = await _db
           .collection('users')
           .where('name', isGreaterThanOrEqualTo: query)
@@ -252,7 +264,6 @@ class FollowService {
           .limit(20)
           .get();
 
-      // Excluimos al usuario actual de los resultados
       return results.docs
           .where((doc) => doc.id != _currentUid)
           .map((doc) => {'uid': doc.id, ...doc.data()})

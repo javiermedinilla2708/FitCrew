@@ -1,3 +1,10 @@
+// ============================================================
+// lib/services/activity_service.dart
+// Servicio que gestiona las operaciones CRUD de actividades
+// deportivas en Firestore, incluyendo la lógica de
+// apuntarse y desapuntarse con transacciones atómicas
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/sport_activity.dart';
@@ -6,17 +13,23 @@ class ActivityService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> createActivity(SportActivity activity) async {
+  // ----------------------------------------------------------
+  // CREAR ACTIVIDAD
+  // Devuelve el ID generado por Firestore o null si falla
+  // ----------------------------------------------------------
+  Future<String?> createActivity(SportActivity activity) async {
     try {
-      final map = activity.toMap();
-      map['createdAt'] = FieldValue.serverTimestamp();
-      map['participants'] = [];
-      await _db.collection('activities').add(map);
+      final docRef = await _db.collection('activities').add(activity.toMap());
+      return docRef.id;
     } catch (e) {
-      throw Exception("Error al crear actividad: $e");
+      return null;
     }
   }
 
+  // ----------------------------------------------------------
+  // STREAM DE ACTIVIDADES EN TIEMPO REAL
+  // Ordenadas por fecha ascendente (próximas primero)
+  // ----------------------------------------------------------
   Stream<List<SportActivity>> getActivitiesStream() {
     return _db
         .collection('activities')
@@ -29,6 +42,11 @@ class ActivityService {
         );
   }
 
+  // ----------------------------------------------------------
+  // APUNTARSE A UNA ACTIVIDAD
+  // Usa transacción atómica para evitar condiciones de carrera
+  // al actualizar occupiedSlots y participants simultáneamente
+  // ----------------------------------------------------------
   Future<void> joinActivity(String activityId) async {
     final user = _auth.currentUser;
     if (user == null) throw "Debes iniciar sesión";
@@ -40,33 +58,44 @@ class ActivityService {
       if (!snapshot.exists) throw "Evento no encontrado";
 
       final data = snapshot.data() as Map<String, dynamic>;
-      final int currentOccupied = data['occupiedSlots'] ?? 0;
+      final int occupied = data['occupiedSlots'] ?? 0;
       final int total = data['totalSlots'] ?? 0;
       final List<String> participants = List<String>.from(
         data['participants'] ?? [],
       );
 
       if (participants.contains(user.uid)) throw "Ya estás apuntado";
-      if (currentOccupied >= total) throw "El evento está lleno";
+      if (occupied >= total) throw "El evento está lleno";
 
       transaction.update(ref, {
-        'occupiedSlots': currentOccupied + 1,
+        'occupiedSlots': occupied + 1,
         'participants': [...participants, user.uid],
       });
     });
   }
 
+  // ----------------------------------------------------------
+  // DESAPUNTARSE DE UNA ACTIVIDAD
+  // Usa transacción atómica para decrementar occupiedSlots
+  // y eliminar al usuario de la lista de participants
+  // ----------------------------------------------------------
   Future<bool> leaveActivity(String activityId) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = _auth.currentUser?.uid;
     if (uid == null) return false;
+
     try {
       await _db.runTransaction((tx) async {
         final ref = _db.collection('activities').doc(activityId);
         final snap = await tx.get(ref);
         final data = snap.data()!;
-        final occupied = (data['occupiedSlots'] as int);
-        final participants = List<String>.from(data['participants'] ?? []);
+
+        final int occupied = data['occupiedSlots'] as int;
+        final List<String> participants = List<String>.from(
+          data['participants'] ?? [],
+        );
+
         participants.remove(uid);
+
         tx.update(ref, {
           'occupiedSlots': occupied - 1,
           'participants': participants,

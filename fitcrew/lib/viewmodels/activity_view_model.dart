@@ -5,7 +5,10 @@
 
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitcrew/services/activity_service.dart';
+import 'package:fitcrew/services/notification_service.dart';
 import 'package:fitcrew/models/sport_activity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -15,8 +18,8 @@ class ActivityViewModel extends ChangeNotifier {
   // DEPENDENCIAS
   // ----------------------------------------------------------
   final ActivityService _activityService = ActivityService();
+  final NotificationService _notifService = NotificationService();
 
-  // Suscripción al stream de Firestore (necesaria para cancelarla en dispose)
   StreamSubscription<List<SportActivity>>? _subscription;
 
   // ----------------------------------------------------------
@@ -76,14 +79,34 @@ class ActivityViewModel extends ChangeNotifier {
 
   // ----------------------------------------------------------
   // CREAR ACTIVIDAD
+  // Notifica a usuarios con ese deporte favorito
   // ----------------------------------------------------------
   Future<void> addActivity(SportActivity activity) async {
     try {
       _isLoading = true;
       _notify();
 
-      await _activityService.createActivity(activity);
+      // Creamos la actividad y obtenemos el ID generado
+      final activityId = await _activityService.createActivity(activity);
       _errorMessage = null;
+
+      // Obtenemos el nombre del organizador
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUid != null && activityId != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUid)
+            .get();
+        final organizerName = userDoc.data()?['name'] ?? 'Usuario';
+
+        // Notificar a usuarios con ese deporte favorito
+        await _notifService.notifyNewActivity(
+          organizerName: organizerName,
+          activityTitle: activity.title,
+          activityId: activityId,
+          sportType: activity.sportType,
+        );
+      }
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -94,10 +117,39 @@ class ActivityViewModel extends ChangeNotifier {
 
   // ----------------------------------------------------------
   // APUNTARSE A UNA ACTIVIDAD
+  // ✅ Notifica al organizador
   // ----------------------------------------------------------
   Future<bool> joinActivity(String activityId) async {
     try {
       await _activityService.joinActivity(activityId);
+
+      // Obtenemos los datos necesarios para la notificación
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUid != null) {
+        // Nombre del usuario que se apunta
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUid)
+            .get();
+        final joinerName = userDoc.data()?['name'] ?? 'Usuario';
+
+        // Datos de la actividad
+        final activity = _activities.firstWhere(
+          (a) => a.id == activityId,
+          orElse: () => throw Exception('Actividad no encontrada'),
+        );
+
+        // ✅ Notificar al organizador si no es el mismo usuario
+        if (activity.organizerId != currentUid) {
+          await _notifService.notifyActivityJoined(
+            organizerUid: activity.organizerId,
+            joinerName: joinerName,
+            activityTitle: activity.title,
+            activityId: activityId,
+          );
+        }
+      }
+
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -106,6 +158,9 @@ class ActivityViewModel extends ChangeNotifier {
     }
   }
 
+  // ----------------------------------------------------------
+  // DESAPUNTARSE DE UNA ACTIVIDAD
+  // ----------------------------------------------------------
   Future<bool> leaveActivity(String activityId) async {
     try {
       return await _activityService.leaveActivity(activityId);
@@ -125,7 +180,7 @@ class ActivityViewModel extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------
-  // DATOS DE PRUEBA (desarrollo / testing)
+  // DATOS DE PRUEBA
   // ----------------------------------------------------------
   void loadMockData() {
     _activities = [
@@ -163,7 +218,7 @@ class ActivityViewModel extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------
-  // DISPOSE — limpieza de recursos
+  // DISPOSE
   // ----------------------------------------------------------
   @override
   void dispose() {
