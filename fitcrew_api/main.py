@@ -6,6 +6,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import stats, ranking
+from routers import notifications
 
 # ----------------------------------------------------------
 # INICIALIZACIÓN DE LA APP
@@ -33,7 +34,7 @@ app.add_middleware(
 # ----------------------------------------------------------
 app.include_router(stats.router)
 app.include_router(ranking.router)
-
+app.include_router(notifications.router)
 # ----------------------------------------------------------
 # HEALTH CHECK
 # ----------------------------------------------------------
