@@ -1,12 +1,26 @@
+// ============================================================
+// lib/viewmodels/filter_viewmodel.dart
+// ViewModel del proceso de onboarding — selección de deportes
+// favoritos. Gestiona la lista completa de deportes disponibles,
+// los deportes seleccionados por el usuario y su persistencia
+// en Firestore via UserService.
+// ============================================================
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fitcrew/services/user_services.dart'; // Asegúrate de que la ruta sea correcta
+import 'package:fitcrew/services/user_services.dart';
 
 class FilterViewModel extends ChangeNotifier {
-  // Inyectamos el servicio
+  // ----------------------------------------------------------
+  // DEPENDENCIAS
+  // ----------------------------------------------------------
   final UserService _userService = UserService();
 
-  // Estado privado
+  // ----------------------------------------------------------
+  // CATÁLOGO COMPLETO DE DEPORTES DISPONIBLES
+  // Lista estática con todos los deportes que el usuario
+  // puede seleccionar como favoritos durante el onboarding
+  // ----------------------------------------------------------
   final List<String> _sports = [
     "Padel",
     "Tenis",
@@ -37,16 +51,27 @@ class FilterViewModel extends ChangeNotifier {
     "Golf",
   ];
 
+  // ----------------------------------------------------------
+  // ESTADO INTERNO
+  // ----------------------------------------------------------
   final List<String> _selectedSports = [];
   bool _isLoading = false;
 
-  // Getters para la UI
+  // ----------------------------------------------------------
+  // GETTERS PÚBLICOS
+  // ----------------------------------------------------------
   List<String> get sports => _sports;
   List<String> get selectedSports => _selectedSports;
   bool get isLoading => _isLoading;
+
+  // El usuario debe seleccionar al menos 3 deportes para continuar
   bool get canFinalize => _selectedSports.length >= 3 && !_isLoading;
 
-  // Lógica de selección
+  // ----------------------------------------------------------
+  // TOGGLE DE SELECCIÓN DE DEPORTE
+  // Si el deporte ya está seleccionado lo deselecciona,
+  // si no está seleccionado lo añade a la lista
+  // ----------------------------------------------------------
   void toggleSport(String sport) {
     if (_selectedSports.contains(sport)) {
       _selectedSports.remove(sport);
@@ -56,7 +81,12 @@ class FilterViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Lógica de guardado usando el UserService
+  // ----------------------------------------------------------
+  // GUARDAR DEPORTES FAVORITOS
+  // Persiste la selección en Firestore y marca el setup como
+  // completado para que la app no vuelva a mostrar el onboarding.
+  // Devuelve true si se guardó correctamente, false si falló.
+  // ----------------------------------------------------------
   Future<bool> saveUserSports() async {
     _isLoading = true;
     notifyListeners();
@@ -65,9 +95,7 @@ class FilterViewModel extends ChangeNotifier {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await _userService.updateFavoriteSports(user.uid, _selectedSports);
-
         await _userService.updateSetupComplete(user.uid);
-
         return true;
       }
       return false;
@@ -80,7 +108,12 @@ class FilterViewModel extends ChangeNotifier {
     }
   }
 
-  // Iconos: Lógica de presentación delegada al ViewModel
+  // ----------------------------------------------------------
+  // OBTENER ICONO SEGÚN EL DEPORTE
+  // Lógica de presentación delegada al ViewModel para mantener
+  // las pantallas limpias de lógica condicional.
+  // Devuelve un icono de Material Design acorde al deporte.
+  // ----------------------------------------------------------
   IconData getSportIcon(String sportType) {
     switch (sportType.toLowerCase()) {
       case 'padel':

@@ -203,7 +203,7 @@ class NotificationService {
         );
       }
     } catch (e) {
-      // No bloqueamos el flujo principal
+      // No se bloquea el flujo principal
     }
   }
 

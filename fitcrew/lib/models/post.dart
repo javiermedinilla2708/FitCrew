@@ -1,19 +1,31 @@
+// ============================================================
+// lib/models/post.dart
+// Modelo de datos que representa un post del feed social.
+// Mapea el documento de la colección 'posts' en Firestore.
+// Los likes y comentarios se gestionan en subcolecciones
+// separadas en tiempo real, por lo que likesCount y
+// commentsCount son campos auxiliares no siempre actualizados.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Post {
-  final String id;
-  final String userId;
-  final String userName;
-  final String? userPic;
-  final String sportType;
-  final String description;
-  final String? imageUrl;
-  final DateTime date;
-  final int likesCount;
-  final int commentsCount;
-  final String level;
+  // ----------------------------------------------------------
+  // CAMPOS
+  // ----------------------------------------------------------
+  final String id; // ID del documento en Firestore
+  final String userId; // UID del autor del post
+  final String userName; // Nombre del autor en el momento de publicar
+  final String? userPic; // URL de foto de perfil del autor
+  final String sportType; // Deporte asociado al post
+  final String description; // Texto descriptivo del logro
+  final String? imageUrl; // Imagen en Base64 (pendiente migrar a Storage)
+  final DateTime date; // Fecha y hora de publicación
+  final int likesCount; // Contador auxiliar de likes
+  final int commentsCount; // Contador auxiliar de comentarios
+  final String level; // Nivel del deporte (ej: "Intermedio")
 
-  Post({
+  const Post({
     required this.id,
     required this.userId,
     required this.userName,
@@ -27,6 +39,11 @@ class Post {
     required this.level,
   });
 
+  // ----------------------------------------------------------
+  // FACTORY — deserialización desde Firestore
+  // El campo date se convierte desde Timestamp de Firestore.
+  // Si no existe, se usa DateTime.now() como fallback.
+  // ----------------------------------------------------------
   factory Post.fromMap(Map<String, dynamic> map, String docId) {
     return Post(
       id: docId,
@@ -45,6 +62,11 @@ class Post {
     );
   }
 
+  // ----------------------------------------------------------
+  // SERIALIZACIÓN — conversión a Map para Firestore
+  // Nota: el campo 'id' no se incluye porque Firestore lo
+  // gestiona como ID del documento, no como campo interno.
+  // ----------------------------------------------------------
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -60,6 +82,9 @@ class Post {
     };
   }
 
+  // ----------------------------------------------------------
+  // COPY WITH — copia inmutable con campos modificados
+  // ----------------------------------------------------------
   Post copyWith({
     String? id,
     String? userId,

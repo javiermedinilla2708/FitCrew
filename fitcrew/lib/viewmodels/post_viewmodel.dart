@@ -1,3 +1,10 @@
+// ============================================================
+// lib/viewmodels/post_viewmodel.dart
+// ViewModel que gestiona la creación y eliminación de posts.
+// Maneja la selección de imagen desde galería, su conversión
+// a Base64 y la publicación via PostService.
+// ============================================================
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -9,21 +16,32 @@ import 'package:fitcrew/services/auth_services.dart';
 import 'package:fitcrew/services/post_service.dart';
 
 class PostViewModel extends ChangeNotifier {
-  // Inyectamos los servicios
+  // ----------------------------------------------------------
+  // DEPENDENCIAS
+  // ----------------------------------------------------------
   final PostService _postService = PostService();
   final AuthService _authService = AuthService();
 
-  File? _imageFile;
-  String? _base64Image;
+  // ----------------------------------------------------------
+  // ESTADO INTERNO
+  // ----------------------------------------------------------
+  File? _imageFile = null; // Archivo de imagen seleccionado del dispositivo
+  String? _base64Image = null; // Imagen codificada en Base64 para Firestore
   bool _isLoading = false;
   List<String> _userSports = [];
 
-  // Getters
+  // ----------------------------------------------------------
+  // GETTERS PÚBLICOS
+  // ----------------------------------------------------------
   File? get imageFile => _imageFile;
   bool get isLoading => _isLoading;
   List<String> get userSports => _userSports;
 
-  // --- CARGAR DEPORTES ---
+  // ----------------------------------------------------------
+  // CARGAR DEPORTES FAVORITOS DEL USUARIO
+  // Necesarios para mostrar las opciones de deporte
+  // disponibles en el formulario de creación de post
+  // ----------------------------------------------------------
   Future<void> loadUserSports() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -32,7 +50,12 @@ class PostViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- SELECCIONAR IMAGEN ---
+  // ----------------------------------------------------------
+  // SELECCIONAR IMAGEN DE LA GALERÍA
+  // Limita el ancho a 800px y la calidad al 50% para reducir
+  // el tamaño del Base64 almacenado en Firestore.
+  // Nota: pendiente migrar a Firebase Storage
+  // ----------------------------------------------------------
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
@@ -49,7 +72,12 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // --- PUBLICAR POST ---
+  // ----------------------------------------------------------
+  // PUBLICAR POST
+  // Requiere descripción e imagen seleccionada previamente.
+  // Genera un UUID como ID del post antes de enviarlo a Firestore.
+  // Devuelve true si se publicó correctamente, false si hubo error.
+  // ----------------------------------------------------------
   Future<bool> uploadPost({
     required String description,
     required String sportType,
@@ -62,7 +90,7 @@ class PostViewModel extends ChangeNotifier {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      final String postId = const Uuid().v4();
+      final postId = const Uuid().v4();
 
       final newPost = Post(
         id: postId,
@@ -88,7 +116,11 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // --- ELIMINAR POST ---
+  // ----------------------------------------------------------
+  // ELIMINAR POST
+  // Delega en PostService y gestiona el estado de carga.
+  // Devuelve true si se eliminó correctamente, false si falló.
+  // ----------------------------------------------------------
   Future<bool> deletePost(String postId) async {
     _isLoading = true;
     notifyListeners();
@@ -105,6 +137,10 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
+  // ----------------------------------------------------------
+  // RESETEAR ESTADO TRAS PUBLICAR
+  // Limpia la imagen seleccionada para el siguiente post
+  // ----------------------------------------------------------
   void _resetData() {
     _imageFile = null;
     _base64Image = null;

@@ -185,7 +185,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            // ✅ Fondo distinto si no está leída
+            // Fondo distinto si no está leída
             color: notif.read ? Colors.white : color.withOpacity(0.06),
             borderRadius: BorderRadius.circular(20),
             border: notif.read
@@ -233,7 +233,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                           ),
                         ),
-                        // ✅ Punto rojo si no leída
+                        // Punto rojo si no leída
                         if (!notif.read)
                           Container(
                             width: 8,

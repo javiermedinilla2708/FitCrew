@@ -1,19 +1,30 @@
+// ============================================================
+// lib/models/app_notification.dart
+// Modelo de datos que representa una notificación en FitCrew.
+// Mapea los documentos de la colección 'notifications' en
+// Firestore. Las notificaciones se generan automáticamente
+// al enviar solicitudes de seguimiento, aceptarlas, apuntarse
+// a actividades o crear nuevas actividades.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ----------------------------------------------------------
-// MODELO DE NOTIFICACIÓN
-// ----------------------------------------------------------
 class AppNotification {
-  final String id;
-  final String toUid;
-  final String fromUid;
-  final String fromName;
-  final String type;
-  final String title;
-  final String body;
-  final bool read;
-  final String? activityId;
-  final DateTime timestamp;
+  // ----------------------------------------------------------
+  // CAMPOS
+  // ----------------------------------------------------------
+  final String id; // ID del documento en Firestore
+  final String toUid; // UID del receptor de la notificación
+  final String fromUid; // UID del emisor de la notificación
+  final String fromName; // Nombre del emisor para mostrar en la UI
+  final String type; // Tipo: follow_request | follow_accepted |
+  //       activity_joined | new_activity
+  final String title; // Título de la notificación
+  final String body; // Cuerpo descriptivo del mensaje
+  final bool read; // True si el receptor ya la ha leído
+  final String?
+  activityId; // ID de actividad relacionada (solo en tipos de actividad)
+  final DateTime timestamp; // Fecha y hora de creación
 
   const AppNotification({
     required this.id,
@@ -28,6 +39,12 @@ class AppNotification {
     required this.timestamp,
   });
 
+  // ----------------------------------------------------------
+  // FACTORY — deserialización desde DocumentSnapshot Firestore
+  // Usa el ID del documento como identificador único.
+  // El timestamp usa DateTime.now() como fallback si aún no
+  // se ha procesado el FieldValue.serverTimestamp() del servidor.
+  // ----------------------------------------------------------
   factory AppNotification.fromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return AppNotification(

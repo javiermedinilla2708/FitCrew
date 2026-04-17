@@ -117,7 +117,7 @@ class ActivityViewModel extends ChangeNotifier {
 
   // ----------------------------------------------------------
   // APUNTARSE A UNA ACTIVIDAD
-  // ✅ Notifica al organizador
+  // Notifica al organizador
   // ----------------------------------------------------------
   Future<bool> joinActivity(String activityId) async {
     try {
@@ -139,7 +139,7 @@ class ActivityViewModel extends ChangeNotifier {
           orElse: () => throw Exception('Actividad no encontrada'),
         );
 
-        // ✅ Notificar al organizador si no es el mismo usuario
+        // Notificar al organizador si no es el mismo usuario
         if (activity.organizerId != currentUid) {
           await _notifService.notifyActivityJoined(
             organizerUid: activity.organizerId,

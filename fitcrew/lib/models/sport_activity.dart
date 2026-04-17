@@ -1,22 +1,32 @@
+// ============================================================
+// lib/models/sport_activity.dart
+// Modelo de datos que representa una actividad deportiva
+// publicada en el mapa. Mapea el documento de la colección
+// 'activities' en Firestore e incluye lógica de negocio básica
+// como comprobar si está llena o si un usuario está apuntado.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SportActivity {
-  final String id;
-  final String title;
-  final String sportType;
-  final String location;
-  final double latitude;
-  final double longitude;
-  final DateTime date;
-  final String organizerId;
-  final int totalSlots;
-  final int occupiedSlots;
-  final String level;
-  final String? imageUrl;
-  // ✅ AÑADIDO: lista de UIDs para saber quién está apuntado
-  final List<String> participants;
+  // ----------------------------------------------------------
+  // CAMPOS
+  // ----------------------------------------------------------
+  final String id; // ID del documento en Firestore
+  final String title; // Nombre del evento
+  final String sportType; // Tipo de deporte (ej: "Pádel")
+  final String location; // Nombre textual de la ubicación
+  final double latitude; // Coordenada geográfica latitud
+  final double longitude; // Coordenada geográfica longitud
+  final DateTime date; // Fecha y hora del evento
+  final String organizerId; // UID del usuario organizador
+  final int totalSlots; // Plazas totales del evento
+  final int occupiedSlots; // Plazas actualmente ocupadas
+  final String level; // Nivel requerido (ej: "Principiante")
+  final String? imageUrl; // Imagen opcional del evento
+  final List<String> participants; // Lista de UIDs de participantes apuntados
 
-  SportActivity({
+  const SportActivity({
     required this.id,
     required this.title,
     required this.sportType,
@@ -32,6 +42,13 @@ class SportActivity {
     this.participants = const [],
   });
 
+  // ----------------------------------------------------------
+  // FACTORY — deserialización desde Firestore
+  // Maneja tres posibles formatos del campo date:
+  //   - Timestamp de Firestore (formato habitual)
+  //   - String ISO 8601 (formato alternativo)
+  //   - Ausente o nulo (usa DateTime.now() como fallback)
+  // ----------------------------------------------------------
   factory SportActivity.fromMap(Map<String, dynamic> data, String id) {
     DateTime parsedDate;
     if (data['date'] is Timestamp) {
@@ -55,11 +72,15 @@ class SportActivity {
       occupiedSlots: data['occupiedSlots'] ?? 0,
       level: data['level'] ?? 'Todos',
       imageUrl: data['imageUrl'],
-      // ✅ AÑADIDO: deserialización de participants
       participants: List<String>.from(data['participants'] ?? []),
     );
   }
 
+  // ----------------------------------------------------------
+  // SERIALIZACIÓN — conversión a Map para Firestore
+  // Nota: el campo 'id' no se incluye porque Firestore lo
+  // gestiona como ID del documento, no como campo interno.
+  // ----------------------------------------------------------
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -67,19 +88,19 @@ class SportActivity {
       'location': location,
       'latitude': latitude,
       'longitude': longitude,
-      // ✅ CORREGIDO: Timestamp en lugar de DateTime nativo
       'date': Timestamp.fromDate(date),
       'organizerId': organizerId,
       'totalSlots': totalSlots,
       'occupiedSlots': occupiedSlots,
       'level': level,
       'imageUrl': imageUrl,
-      // ✅ AÑADIDO: serialización de participants
       'participants': participants,
     };
   }
 
-  // ✅ AÑADIDO: copyWith() útil para cuando un usuario se apunta/desapunta
+  // ----------------------------------------------------------
+  // COPY WITH — copia inmutable con campos modificados
+  // ----------------------------------------------------------
   SportActivity copyWith({
     String? id,
     String? title,
@@ -112,7 +133,17 @@ class SportActivity {
     );
   }
 
+  // ----------------------------------------------------------
+  // GETTERS DE NEGOCIO
+  // Encapsulan lógica derivada del estado del modelo
+  // ----------------------------------------------------------
+
+  // True si no quedan plazas disponibles
   bool get isFull => occupiedSlots >= totalSlots;
+
+  // True si el usuario con el uid dado está apuntado
   bool isUserJoined(String uid) => participants.contains(uid);
+
+  // Número de plazas todavía disponibles
   int get availableSlots => totalSlots - occupiedSlots;
 }
