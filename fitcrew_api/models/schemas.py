@@ -56,4 +56,4 @@ class ActivityRecommendation(BaseModel):
     level: str
     occupied_slots: int
     total_slots: int
-    match_score: float  # 0.0 a 1.0 según coincidencia de deportes
+    match_score: float 

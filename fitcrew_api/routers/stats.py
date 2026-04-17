@@ -52,7 +52,6 @@ async def get_user_stats(
         total_organized = len(organized)
 
         # --- Actividades en las que participó ---
-        # Una sola consulta sin filtro de fecha para evitar índice compuesto
         joined      = db.collection("activities").where("participants", "array_contains", uid).get()
         total_joined = len(joined)
 
@@ -68,18 +67,17 @@ async def get_user_stats(
         )
 
         # --- Racha de días consecutivos calculada en Python ---
-        # Evita el índice compuesto (participants + date) de Firestore
         now = datetime.utcnow()
         streak = 0
 
-        # Construimos un set de fechas con actividad
+        
         days_with_activity: set[str] = set()
         for activity in joined:
             data = activity.to_dict()
             date = data.get("date")
             if date:
                 try:
-                    # Firestore devuelve Timestamp, convertimos a datetime
+                    
                     if hasattr(date, "todate"):
                         date = date.ToDatetime()
                     day_str = date.strftime("%Y-%m-%d")
@@ -87,7 +85,7 @@ async def get_user_stats(
                 except Exception:
                     pass
 
-        # Contamos días consecutivos hacia atrás desde hoy
+        
         for i in range(30):
             day     = now - timedelta(days=i)
             day_str = day.strftime("%Y-%m-%d")

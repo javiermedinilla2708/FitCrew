@@ -36,7 +36,7 @@ async def send_notification(
     verify_token(authorization)
 
     try:
-        # Obtenemos el token FCM del receptor
+        # Se obtiene el token FCM del receptor
         user_doc = db.collection("users").document(to_uid).get()
         if not user_doc.exists:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -46,7 +46,7 @@ async def send_notification(
             # No bloqueamos si el usuario no tiene token
             return {"status": "no_token", "message": "Usuario sin token FCM"}
 
-        # Construimos el mensaje FCM
+        # Se construlle el mensaje FCM
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
