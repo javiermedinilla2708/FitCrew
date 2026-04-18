@@ -7,6 +7,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/services/push_notification_service.dart';
 import 'package:fitcrew/services/user_services.dart';
 import 'package:flutter/material.dart';
 
@@ -17,8 +18,6 @@ class AuthService {
 
   // ----------------------------------------------------------
   // REGISTRO CON EMAIL Y CONTRASEÑA
-  // Crea la cuenta en Firebase Auth, actualiza el displayName
-  // y delega la creación del documento de usuario en UserService
   // ----------------------------------------------------------
   Future<User?> registerWithEmail(
     String email,
@@ -35,10 +34,7 @@ class AuthService {
 
       final user = result.user;
       if (user != null) {
-        // Actualiza el nombre visible en Firebase Auth
         await user.updateDisplayName(name);
-
-        // Crea el documento del usuario en Firestore
         await _userService.createUserData(user.uid, name, normalizedEmail);
       }
 
@@ -52,8 +48,6 @@ class AuthService {
 
   // ----------------------------------------------------------
   // LOGIN CON EMAIL Y CONTRASEÑA
-  // Normaliza el email antes de enviarlo a Firebase Auth
-  // para evitar problemas con mayúsculas o espacios
   // ----------------------------------------------------------
   Future<User?> loginWithEmail(String email, String password) async {
     try {
@@ -74,7 +68,6 @@ class AuthService {
 
   // ----------------------------------------------------------
   // OBTENER DEPORTES FAVORITOS DEL USUARIO
-  // Delegado a UserService para mantener separación de responsabilidades
   // ----------------------------------------------------------
   Future<List<String>> getUserSports(String uid) async {
     return _userService.getUserSports(uid);
@@ -82,7 +75,6 @@ class AuthService {
 
   // ----------------------------------------------------------
   // ACTUALIZAR DEPORTES FAVORITOS DEL USUARIO
-  // Delegado a UserService
   // ----------------------------------------------------------
   Future<void> updateFavoriteSports(String uid, List<String> sports) async {
     await _userService.updateFavoriteSports(uid, sports);
@@ -90,23 +82,27 @@ class AuthService {
 
   // ----------------------------------------------------------
   // CERRAR SESIÓN
-  // Cierra la sesión en Firebase Auth
   // ----------------------------------------------------------
   Future<void> signOut() async {
     try {
       await _auth.signOut();
     } catch (e) {
-      // Error no crítico — se registra pero no interrumpe el flujo
       debugPrint("Error al cerrar sesión: $e");
     }
   }
 
   // ----------------------------------------------------------
-  // ELIMINAR CUENTA DE USUARIO
+  // ELIMINAR CUENTA DE USUARIO — borrado completo
   // Proceso en orden:
-  //   1. Elimina todos los posts del usuario en Firestore (batch)
-  //   2. Elimina el documento del usuario via UserService
-  //   3. Elimina la cuenta de Firebase Auth
+  //   1.  Limpiar token FCM del dispositivo
+  //   2.  Eliminar posts del usuario
+  //   3.  Eliminar actividades organizadas por el usuario
+  //   4.  Eliminar notificaciones enviadas y recibidas
+  //   5.  Eliminar solicitudes de seguimiento enviadas y recibidas
+  //   6.  Eliminar subcolecciones followers y following
+  //   7.  Desapuntarse de actividades donde participa
+  //   8.  Eliminar documento del usuario en Firestore
+  //   9.  Eliminar cuenta de Firebase Auth
   //
   // Requiere login reciente — Firebase lanza requires-recent-login
   // si han pasado más de 5 minutos desde la última autenticación
@@ -115,23 +111,169 @@ class AuthService {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
+      final uid = user.uid;
 
-      // Paso 1 — Eliminar todos los posts del usuario
+      // --------------------------------------------------
+      // Paso 1 — Limpiar token FCM
+      // --------------------------------------------------
+      await PushNotificationService.clearToken();
+
+      // --------------------------------------------------
+      // Paso 2 — Eliminar todos los posts del usuario
+      // --------------------------------------------------
       final postsQuery = await _db
           .collection('posts')
-          .where('userId', isEqualTo: user.uid)
+          .where('userId', isEqualTo: uid)
           .get();
 
-      final batch = _db.batch();
-      for (var doc in postsQuery.docs) {
-        batch.delete(doc.reference);
+      final batchPosts = _db.batch();
+      for (final doc in postsQuery.docs) {
+        batchPosts.delete(doc.reference);
       }
-      await batch.commit();
+      await batchPosts.commit();
 
-      // Paso 2 — Eliminar datos del usuario en Firestore
-      await _userService.deleteUserData(user.uid);
+      // --------------------------------------------------
+      // Paso 3 — Eliminar actividades organizadas por el usuario
+      // Se borran completamente ya que sin organizador
+      // las actividades quedarían huérfanas en el mapa
+      // --------------------------------------------------
+      final activitiesOrganized = await _db
+          .collection('activities')
+          .where('organizerId', isEqualTo: uid)
+          .get();
 
-      // Paso 3 — Eliminar la cuenta de Firebase Auth
+      final batchActivities = _db.batch();
+      for (final doc in activitiesOrganized.docs) {
+        batchActivities.delete(doc.reference);
+      }
+      await batchActivities.commit();
+
+      // --------------------------------------------------
+      // Paso 4 — Eliminar notificaciones recibidas (toUid)
+      //          y enviadas (fromUid)
+      // --------------------------------------------------
+      final notifsReceived = await _db
+          .collection('notifications')
+          .where('toUid', isEqualTo: uid)
+          .get();
+
+      final notifsSent = await _db
+          .collection('notifications')
+          .where('fromUid', isEqualTo: uid)
+          .get();
+
+      final batchNotifs = _db.batch();
+      for (final doc in notifsReceived.docs) {
+        batchNotifs.delete(doc.reference);
+      }
+      for (final doc in notifsSent.docs) {
+        batchNotifs.delete(doc.reference);
+      }
+      await batchNotifs.commit();
+
+      // --------------------------------------------------
+      // Paso 5 — Eliminar solicitudes de seguimiento
+      //          enviadas (fromUid) y recibidas (toUid)
+      // --------------------------------------------------
+      final requestsSent = await _db
+          .collection('follow_requests')
+          .where('fromUid', isEqualTo: uid)
+          .get();
+
+      final requestsReceived = await _db
+          .collection('follow_requests')
+          .where('toUid', isEqualTo: uid)
+          .get();
+
+      final batchRequests = _db.batch();
+      for (final doc in requestsSent.docs) {
+        batchRequests.delete(doc.reference);
+      }
+      for (final doc in requestsReceived.docs) {
+        batchRequests.delete(doc.reference);
+      }
+      await batchRequests.commit();
+
+      // --------------------------------------------------
+      // Paso 6 — Eliminar subcolecciones followers y following
+      // Los usuarios que le seguían o a los que seguía
+      // deben también actualizar sus subcolecciones
+      // --------------------------------------------------
+
+      // Eliminar de following de cada usuario que este seguía
+      final followingDocs = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('following')
+          .get();
+
+      final batchFollowing = _db.batch();
+      for (final doc in followingDocs.docs) {
+        final followedUid = doc.id;
+        batchFollowing.delete(
+          _db
+              .collection('users')
+              .doc(followedUid)
+              .collection('followers')
+              .doc(uid),
+        );
+        batchFollowing.delete(doc.reference);
+      }
+      await batchFollowing.commit();
+
+      // Eliminar de followers de cada usuario que le seguía
+      final followersDocs = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('followers')
+          .get();
+
+      final batchFollowers = _db.batch();
+      for (final doc in followersDocs.docs) {
+        final followerUid = doc.id;
+        batchFollowers.delete(
+          _db
+              .collection('users')
+              .doc(followerUid)
+              .collection('following')
+              .doc(uid),
+        );
+        batchFollowers.delete(doc.reference);
+      }
+      await batchFollowers.commit();
+
+      // --------------------------------------------------
+      // Paso 7 — Desapuntarse de actividades donde participa
+      // Decrementa occupiedSlots y elimina al usuario
+      // de la lista de participants en cada actividad
+      // --------------------------------------------------
+      final activitiesJoined = await _db
+          .collection('activities')
+          .where('participants', arrayContains: uid)
+          .get();
+
+      for (final doc in activitiesJoined.docs) {
+        final data = doc.data();
+        final occupied = (data['occupiedSlots'] as int? ?? 1);
+        final participants = List<String>.from(data['participants'] ?? []);
+        participants.remove(uid);
+
+        await doc.reference.update({
+          'occupiedSlots': occupied > 0 ? occupied - 1 : 0,
+          'participants': participants,
+        });
+      }
+
+      // --------------------------------------------------
+      // Paso 8 — Eliminar documento del usuario en Firestore
+      // --------------------------------------------------
+      await _userService.deleteUserData(uid);
+
+      // --------------------------------------------------
+      // Paso 9 — Eliminar la cuenta de Firebase Auth
+      // Debe ser el último paso porque tras esto el usuario
+      // pierde acceso a Firestore
+      // --------------------------------------------------
       await user.delete();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
