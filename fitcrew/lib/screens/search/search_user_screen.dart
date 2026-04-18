@@ -597,7 +597,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
               ),
               const SizedBox(width: 8),
               const Text(
-                "Puede que conozcas",
+                "Sugerencias según tus gustos",
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

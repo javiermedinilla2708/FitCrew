@@ -1260,453 +1260,460 @@ class _ActivityScreenState extends State<ActivityScreen>
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.85,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            margin: const EdgeInsets.only(top: 8, bottom: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(2),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              margin: const EdgeInsets.only(top: 8, bottom: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
-                        ),
 
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: _colorVerdeMenta,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.add_circle_outline,
-                                color: _colorVerdeBosque,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Nueva Actividad",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: _colorTextoTitulo,
-                                  ),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: _colorVerdeMenta,
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                Text(
-                                  "Comparte tu evento deportivo",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Campo nombre
-                        _buildField(
-                          controller: titleController,
-                          label: "Nombre del evento",
-                          hint: "Ej: Entrenamiento funcional",
-                          icon: Icons.title,
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Campo ubicación con autocompletado
-                        TypeAheadField<Map<String, dynamic>>(
-                          controller: locationController,
-                          suggestionsCallback: _searchPlaces,
-                          builder: (context, controller, focusNode) {
-                            return TextField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              decoration: InputDecoration(
-                                labelText: "Ubicación del evento",
-                                hintText: "Ej: Parque del Retiro, Madrid",
-                                hintStyle: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 13,
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.location_on_outlined,
+                                child: const Icon(
+                                  Icons.add_circle_outline,
                                   color: _colorVerdeBosque,
-                                  size: 20,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[200]!,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[200]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(
-                                    color: _colorVerdeBosque,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 16,
+                                  size: 24,
                                 ),
                               ),
-                            );
-                          },
-                          itemBuilder: (context, place) {
-                            final name = place['display_name'] as String;
-                            final type = place['type'] as String? ?? '';
-                            final address =
-                                place['address'] as Map<String, dynamic>? ?? {};
-                            final city =
-                                address['city'] ??
-                                address['town'] ??
-                                address['village'] ??
-                                address['county'] ??
-                                '';
-                            final country = address['country'] ?? '';
-
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Colors.grey.shade100,
-                                  ),
-                                ),
-                              ),
-                              child: Row(
+                              const SizedBox(width: 14),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: _colorVerdeMenta.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      _getPlaceIcon(type),
-                                      color: _colorVerdeBosque,
-                                      size: 16,
+                                  const Text(
+                                    "Nueva Actividad",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: _colorTextoTitulo,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          city.isNotEmpty
-                                              ? city.toString()
-                                              : name.split(',').first,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: _colorTextoTitulo,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                  Text(
+                                    "Comparte tu evento deportivo",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Campo nombre
+                          _buildField(
+                            controller: titleController,
+                            label: "Nombre del evento",
+                            hint: "Ej: Entrenamiento funcional",
+                            icon: Icons.title,
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // Campo ubicación con autocompletado
+                          TypeAheadField<Map<String, dynamic>>(
+                            controller: locationController,
+                            suggestionsCallback: _searchPlaces,
+                            builder: (context, controller, focusNode) {
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  labelText: "Ubicación del evento",
+                                  hintText: "Ej: Parque del Retiro, Madrid",
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 13,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.location_on_outlined,
+                                    color: _colorVerdeBosque,
+                                    size: 20,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[200]!,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[200]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(
+                                      color: _colorVerdeBosque,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                    horizontal: 16,
+                                  ),
+                                ),
+                              );
+                            },
+                            itemBuilder: (context, place) {
+                              final name = place['display_name'] as String;
+                              final type = place['type'] as String? ?? '';
+                              final address =
+                                  place['address'] as Map<String, dynamic>? ??
+                                  {};
+                              final city =
+                                  address['city'] ??
+                                  address['town'] ??
+                                  address['village'] ??
+                                  address['county'] ??
+                                  '';
+                              final country = address['country'] ?? '';
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.grey.shade100,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: _colorVerdeMenta.withOpacity(
+                                          0.5,
                                         ),
-                                        if (country.isNotEmpty)
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        _getPlaceIcon(type),
+                                        color: _colorVerdeBosque,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
                                           Text(
-                                            name,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[500],
+                                            city.isNotEmpty
+                                                ? city.toString()
+                                                : name.split(',').first,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: _colorTextoTitulo,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                      ],
+                                          if (country.isNotEmpty)
+                                            Text(
+                                              name,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            onSelected: (place) {
+                              final name = place['display_name'] as String;
+                              final lat = double.parse(place['lat'] as String);
+                              final lon = double.parse(place['lon'] as String);
+                              final address =
+                                  place['address'] as Map<String, dynamic>? ??
+                                  {};
+                              final city =
+                                  address['city'] ??
+                                  address['town'] ??
+                                  address['village'] ??
+                                  name.split(',').first;
+
+                              locationController.text = city.toString();
+                              setModalState(() {
+                                currentLocation = LatLng(lat, lon);
+                              });
+                              _mapController.move(LatLng(lat, lon), 15.0);
+                            },
+                            decorationBuilder: (context, child) => Material(
+                              elevation: 8,
+                              borderRadius: BorderRadius.circular(16),
+                              shadowColor: Colors.black.withOpacity(0.1),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: child,
+                              ),
+                            ),
+                            offset: const Offset(0, 4),
+                            emptyBuilder: (context) => Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                "No se encontraron resultados",
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          //Selector de hora
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: selectedTime,
+                                builder: (context, child) => Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.light(
+                                      primary: _colorVerdeBosque,
+                                      onPrimary: Colors.white,
+                                      surface: Colors.white,
                                     ),
                                   ),
+                                  child: child!,
+                                ),
+                              );
+                              if (picked != null) {
+                                setModalState(() => selectedTime = picked);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Row(
+                                children: [
                                   const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    size: 12,
-                                    color: Colors.grey,
+                                    Icons.access_time_rounded,
+                                    color: _colorVerdeBosque,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Hora del evento",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _colorVerdeMenta,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: _colorVerdeBosque,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                          onSelected: (place) {
-                            final name = place['display_name'] as String;
-                            final lat = double.parse(place['lat'] as String);
-                            final lon = double.parse(place['lon'] as String);
-                            final address =
-                                place['address'] as Map<String, dynamic>? ?? {};
-                            final city =
-                                address['city'] ??
-                                address['town'] ??
-                                address['village'] ??
-                                name.split(',').first;
+                            ),
+                          ),
 
-                            locationController.text = city.toString();
-                            setModalState(() {
-                              currentLocation = LatLng(lat, lon);
-                            });
-                            _mapController.move(LatLng(lat, lon), 15.0);
-                          },
-                          decorationBuilder: (context, child) => Material(
-                            elevation: 8,
+                          const SizedBox(height: 20),
+
+                          // Selector de deporte
+                          _buildSportSelector(
+                            selectedValue: selectedSport,
+                            items: widget.userInterests,
+                            onChanged: (v) =>
+                                setModalState(() => selectedSport = v),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Selector de nivel
+                          _buildLevelSelector(
+                            selectedValue: selectedLevel,
+                            onChanged: (v) =>
+                                setModalState(() => selectedLevel = v),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // Slider plazas
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.group,
+                                color: _colorVerdeBosque,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                "Plazas: $totalSlots",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: _colorTextoTitulo,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Expanded(
+                                child: Slider(
+                                  value: totalSlots.toDouble(),
+                                  min: 2,
+                                  max: 20,
+                                  divisions: 18,
+                                  activeColor: _colorVerdeBosque,
+                                  inactiveColor: _colorVerdeMenta,
+                                  onChanged: (v) => setModalState(
+                                    () => totalSlots = v.round(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (titleController.text.trim().isEmpty) return;
+                          if (locationController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Añade una ubicación al evento"),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final eventDate = DateTime(
+                            now.year,
+                            now.month,
+                            now.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+
+                          final activity = SportActivity(
+                            id: '',
+                            title: titleController.text.trim(),
+                            sportType: selectedSport,
+                            location: locationController.text.trim(),
+                            latitude: currentLocation.latitude,
+                            longitude: currentLocation.longitude,
+                            totalSlots: totalSlots,
+                            occupiedSlots: 1,
+                            level: selectedLevel,
+                            date: eventDate,
+                            organizerId:
+                                FirebaseAuth.instance.currentUser?.uid ?? '',
+                          );
+
+                          await vm.addActivity(activity);
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text("Actividad creada!"),
+                                backgroundColor: _colorVerdeBosque,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _colorVerdeBosque,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            shadowColor: Colors.black.withOpacity(0.1),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: child,
-                            ),
                           ),
-                          offset: const Offset(0, 4),
-                          emptyBuilder: (context) => Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              "No se encontraron resultados",
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 13,
-                              ),
-                            ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          "Publicar Evento",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        //Selector de hora
-                        GestureDetector(
-                          onTap: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: selectedTime,
-                              builder: (context, child) => Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary: _colorVerdeBosque,
-                                    onPrimary: Colors.white,
-                                    surface: Colors.white,
-                                  ),
-                                ),
-                                child: child!,
-                              ),
-                            );
-                            if (picked != null) {
-                              setModalState(() => selectedTime = picked);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.grey[200]!),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.access_time_rounded,
-                                  color: _colorVerdeBosque,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    "Hora del evento",
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _colorVerdeMenta,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: _colorVerdeBosque,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Selector de deporte
-                        _buildSportSelector(
-                          selectedValue: selectedSport,
-                          items: widget.userInterests,
-                          onChanged: (v) =>
-                              setModalState(() => selectedSport = v),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Selector de nivel
-                        _buildLevelSelector(
-                          selectedValue: selectedLevel,
-                          onChanged: (v) =>
-                              setModalState(() => selectedLevel = v),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Slider plazas
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.group,
-                              color: _colorVerdeBosque,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              "Plazas: $totalSlots",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: _colorTextoTitulo,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Expanded(
-                              child: Slider(
-                                value: totalSlots.toDouble(),
-                                min: 2,
-                                max: 20,
-                                divisions: 18,
-                                activeColor: _colorVerdeBosque,
-                                inactiveColor: _colorVerdeMenta,
-                                onChanged: (v) =>
-                                    setModalState(() => totalSlots = v.round()),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (titleController.text.trim().isEmpty) return;
-                        if (locationController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Añade una ubicación al evento"),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                          return;
-                        }
-
-                        final eventDate = DateTime(
-                          now.year,
-                          now.month,
-                          now.day,
-                          selectedTime.hour,
-                          selectedTime.minute,
-                        );
-
-                        final activity = SportActivity(
-                          id: '',
-                          title: titleController.text.trim(),
-                          sportType: selectedSport,
-                          location: locationController.text.trim(),
-                          latitude: currentLocation.latitude,
-                          longitude: currentLocation.longitude,
-                          totalSlots: totalSlots,
-                          occupiedSlots: 1,
-                          level: selectedLevel,
-                          date: eventDate,
-                          organizerId:
-                              FirebaseAuth.instance.currentUser?.uid ?? '',
-                        );
-
-                        await vm.addActivity(activity);
-
-                        if (mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Actividad creada!"),
-                              backgroundColor: _colorVerdeBosque,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _colorVerdeBosque,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Publicar Evento",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
