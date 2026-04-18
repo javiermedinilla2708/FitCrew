@@ -89,15 +89,17 @@ class _RankingScreenState extends State<RankingScreen>
         ),
       ),
 
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // --- Tab 1: Ranking Global ---
-          _buildGlobalRankingTab(),
+      body: SafeArea(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            // --- Tab 1: Ranking Global ---
+            _buildGlobalRankingTab(),
 
-          // --- Tab 2: Ranking por Deporte ---
-          _buildSportRankingTab(),
-        ],
+            // --- Tab 2: Ranking por Deporte ---
+            _buildSportRankingTab(),
+          ],
+        ),
       ),
     );
   }

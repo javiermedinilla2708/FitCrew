@@ -148,51 +148,53 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       // ----------------------------------------------------------
       // BODY
       // ----------------------------------------------------------
-      body: postVM.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: _colorVerdeBosque),
-            )
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 15),
+      body: SafeArea(
+        child: postVM.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: _colorVerdeBosque),
+              )
+            : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 15),
 
-                  // --- Sección de imagen ---
-                  _buildImageSection(postVM),
+                    // --- Sección de imagen ---
+                    _buildImageSection(postVM),
 
-                  const SizedBox(height: 25),
+                    const SizedBox(height: 25),
 
-                  // --- Accesos rápidos sociales ---
-                  _buildSocialShortcuts(),
+                    // --- Accesos rápidos sociales ---
+                    _buildSocialShortcuts(),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 30),
 
-                  // --- Selección de deporte ---
-                  _sectionTitle("¿Qué has entrenado?"),
-                  const SizedBox(height: 15),
-                  _buildSportsList(postVM),
+                    // --- Selección de deporte ---
+                    _sectionTitle("¿Qué has entrenado?"),
+                    const SizedBox(height: 15),
+                    _buildSportsList(postVM),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 30),
 
-                  // --- Selección de nivel ---
-                  _sectionTitle("Nivel de intensidad"),
-                  const SizedBox(height: 15),
-                  _buildLevelsList(),
+                    // --- Selección de nivel ---
+                    _sectionTitle("Nivel de intensidad"),
+                    const SizedBox(height: 15),
+                    _buildLevelsList(),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 30),
 
-                  // --- Campo de descripción ---
-                  _sectionTitle("Descripción"),
-                  const SizedBox(height: 15),
-                  _buildDescriptionField(),
+                    // --- Campo de descripción ---
+                    _sectionTitle("Descripción"),
+                    const SizedBox(height: 15),
+                    _buildDescriptionField(),
 
-                  const SizedBox(height: 40),
-                ],
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

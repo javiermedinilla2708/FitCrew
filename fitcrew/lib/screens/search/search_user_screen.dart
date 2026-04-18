@@ -270,9 +270,11 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
         ),
       ),
       // Se encarga de la seleccion de las pestañas
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildSearchTab(), _buildRequestsTab()],
+      body: SafeArea(
+        child: TabBarView(
+          controller: _tabController,
+          children: [_buildSearchTab(), _buildRequestsTab()],
+        ),
       ),
     );
   }

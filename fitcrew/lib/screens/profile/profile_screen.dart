@@ -63,32 +63,34 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
 
-            // --- Avatar y nombre ---
-            _buildHeader(),
+              // --- Avatar y nombre ---
+              _buildHeader(),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            // --- Estadísticas (posts reales de Firestore) ---
-            _buildStatsGrid(),
+              // --- Estadísticas (posts reales de Firestore) ---
+              _buildStatsGrid(),
 
-            const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-            // --- Dashboard de rendimiento ---
-            _buildPerformanceDashboard(),
+              // --- Dashboard de rendimiento ---
+              _buildPerformanceDashboard(),
 
-            const SizedBox(height: 35),
+              const SizedBox(height: 35),
 
-            // --- Galería de posts ---
-            _buildPostSection(),
+              // --- Galería de posts ---
+              _buildPostSection(),
 
-            const SizedBox(height: 120),
-          ],
+              const SizedBox(height: 120),
+            ],
+          ),
         ),
       ),
     );
@@ -108,125 +110,130 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 45,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 45,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-            // --- Info del usuario ---
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: _colorVerdeMenta,
-                  child: Text(
-                    userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: _colorVerdeBosque,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
+              // --- Info del usuario ---
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: _colorVerdeMenta,
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: _colorVerdeBosque,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _colorVerdeBosque,
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _colorVerdeBosque,
+                          ),
                         ),
-                      ),
-                      Text(
-                        userEmail,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        Text(
+                          userEmail,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 25),
+              const Divider(),
+
+              // --- Opciones de menú ---
+              _buildMenuOption(
+                icon: Icons.lock_person_outlined,
+                title: "Privacidad",
+                subtitle: "Perfil público, bloqueos y visibilidad",
+                onTap: () => Navigator.pop(context),
+              ),
+              _buildMenuOption(
+                icon: Icons.shield_outlined,
+                title: "Seguridad de la cuenta",
+                subtitle: "Cambiar contraseña y verificación",
+                onTap: () => Navigator.pop(context),
+              ),
+              _buildMenuOption(
+                icon: Icons.settings_suggest_outlined,
+                title: "Preferencias",
+                subtitle: "Unidades de medida y notificaciones",
+                onTap: () => Navigator.pop(context),
+              ),
+
+              const SizedBox(height: 10),
+              const Divider(),
+
+              // --- Cerrar sesión ---
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.logout_rounded,
+                  color: _colorVerdeBosque,
+                ),
+                title: const Text(
+                  "Cerrar Sesión",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showLogoutDialog(context);
+                },
+              ),
+
+              // --- Eliminar cuenta ---
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: _colorVerdeBosque,
+                ),
+                title: const Text(
+                  "Eliminar Cuenta",
+                  style: TextStyle(
+                    color: _colorVerdeBosque,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 25),
-            const Divider(),
-
-            // --- Opciones de menú ---
-            _buildMenuOption(
-              icon: Icons.lock_person_outlined,
-              title: "Privacidad",
-              subtitle: "Perfil público, bloqueos y visibilidad",
-              onTap: () => Navigator.pop(context),
-            ),
-            _buildMenuOption(
-              icon: Icons.shield_outlined,
-              title: "Seguridad de la cuenta",
-              subtitle: "Cambiar contraseña y verificación",
-              onTap: () => Navigator.pop(context),
-            ),
-            _buildMenuOption(
-              icon: Icons.settings_suggest_outlined,
-              title: "Preferencias",
-              subtitle: "Unidades de medida y notificaciones",
-              onTap: () => Navigator.pop(context),
-            ),
-
-            const SizedBox(height: 10),
-            const Divider(),
-
-            // --- Cerrar sesión ---
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.logout_rounded,
-                color: _colorVerdeBosque,
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleDeleteAccount(context);
+                },
               ),
-              title: const Text(
-                "Cerrar Sesión",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _showLogoutDialog(context);
-              },
-            ),
 
-            // --- Eliminar cuenta ---
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.delete_forever_outlined,
-                color: _colorVerdeBosque,
-              ),
-              title: const Text(
-                "Eliminar Cuenta",
-                style: TextStyle(
-                  color: _colorVerdeBosque,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _handleDeleteAccount(context);
-              },
-            ),
-
-            const SizedBox(height: 30),
-          ],
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

@@ -124,7 +124,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      // Eliminado: Stack innecesario sin elementos posicionados
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),

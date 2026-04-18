@@ -120,29 +120,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<List<AppNotification>>(
-        stream: _notifService.getNotificationsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: _colorVerdeBosque),
+      body: SafeArea(
+        child: StreamBuilder<List<AppNotification>>(
+          stream: _notifService.getNotificationsStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: _colorVerdeBosque),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            final notifications = snapshot.data!;
+
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                return _buildNotificationCard(notifications[index]);
+              },
             );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          final notifications = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
-              return _buildNotificationCard(notifications[index]);
-            },
-          );
-        },
+          },
+        ),
       ),
     );
   }
