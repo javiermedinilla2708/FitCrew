@@ -1,3 +1,11 @@
+// ============================================================
+// lib/screens/activities/activities_screen.dart
+// Pantalla de mapa con actividades deportivas cercanas,
+// tarjeta de detalle animada y formulario de creación.
+// Permite crear, ver, apuntarse/desapuntarse y eliminar
+// actividades propias directamente desde el mapa.
+// ============================================================
+
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -13,15 +21,16 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-// ============================================================
-// ActivityScreen
-// Pantalla de mapa con actividades deportivas cercanas,
-// tarjeta de detalle animada y formulario de creación
-// ============================================================
-
 class ActivityScreen extends StatefulWidget {
   final List<String> userInterests;
-  const ActivityScreen({super.key, required this.userInterests});
+
+  final VoidCallback? onStatsChanged;
+
+  const ActivityScreen({
+    super.key,
+    required this.userInterests,
+    this.onStatsChanged,
+  });
 
   @override
   State<ActivityScreen> createState() => _ActivityScreenState();
@@ -43,7 +52,9 @@ class _ActivityScreenState extends State<ActivityScreen>
   LatLng _initialPos = LatLng(40.4167, -3.7037);
   LatLng? _userLocation;
   LatLng? _selectedLocation;
+
   String? _selectedLocationText;
+  String? _selectedLocationFull;
 
   // ----------------------------------------------------------
   // ESTADO UI
@@ -55,7 +66,7 @@ class _ActivityScreenState extends State<ActivityScreen>
   bool _loadingLocation = true;
 
   // ----------------------------------------------------------
-  // BÚSQUEDA DE UBICACIÓN EN EL MAPA
+  // BÚSQUEDA
   // ----------------------------------------------------------
   final TextEditingController _searchController = TextEditingController();
   double _searchRadius = 5.0;
@@ -98,6 +109,9 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   // ----------------------------------------------------------
   // UBICACIÓN DEL USUARIO
+  // Solicita permisos y obtiene las coordenadas GPS actuales.
+  // Si el servicio o los permisos no están disponibles,
+  // se usa la posición por defecto (Madrid centro).
   // ----------------------------------------------------------
   Future<void> _getUserLocation() async {
     try {
@@ -138,6 +152,11 @@ class _ActivityScreenState extends State<ActivityScreen>
     }
   }
 
+  // ----------------------------------------------------------
+  // CÁLCULO DE DISTANCIA
+  // Devuelve la distancia en kilómetros entre dos coordenadas
+  // usando la fórmula de Geolocator (Haversine)
+  // ----------------------------------------------------------
   double _distanceInKm(LatLng a, LatLng b) {
     return Geolocator.distanceBetween(
           a.latitude,
@@ -149,7 +168,9 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // BÚSQUEDA DE LUGARES
+  // BÚSQUEDA DE LUGARES (Nominatim)
+  // Llama a la API de OpenStreetMap para obtener sugerencias
+  // de ubicaciones a partir del texto introducido
   // ----------------------------------------------------------
   Future<List<Map<String, dynamic>>> _searchPlaces(String query) async {
     if (query.isEmpty) return [];
@@ -157,18 +178,14 @@ class _ActivityScreenState extends State<ActivityScreen>
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/search'
         '?q=${Uri.encodeComponent(query)}'
-        '&format=json'
-        '&limit=5'
-        '&addressdetails=1'
-        '&accept-language=es',
+        '&format=json&limit=5&addressdetails=1&accept-language=es',
       );
       final response = await http.get(
         uri,
         headers: {'User-Agent': 'FitCrew/1.0'},
       );
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return (jsonDecode(response.body) as List).cast<Map<String, dynamic>>();
       }
       return [];
     } catch (e) {
@@ -177,22 +194,21 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // FILTRADO DE ACTIVIDADES
+  // FILTRADO DE ACTIVIDADES POR RADIO
+  // Muestra solo las actividades dentro del radio seleccionado
+  // respecto a la ubicación actual del usuario
   // ----------------------------------------------------------
   List<SportActivity> _filterActivities(List<SportActivity> all) {
     return all.where((a) {
-      bool matchesRadius = true;
-      if (_userLocation != null) {
-        final distance = _distanceInKm(
-          _userLocation!,
-          LatLng(a.latitude, a.longitude),
-        );
-        matchesRadius = distance <= _searchRadius;
-      }
-      return matchesRadius;
+      if (_userLocation == null) return true;
+      return _distanceInKm(_userLocation!, LatLng(a.latitude, a.longitude)) <=
+          _searchRadius;
     }).toList();
   }
 
+  // ----------------------------------------------------------
+  // SELECCIÓN Y CIERRE DE TARJETA DE DETALLE
+  // ----------------------------------------------------------
   void _selectActivity(SportActivity a) {
     setState(() => _selectedActivity = a);
     _mapController.move(LatLng(a.latitude, a.longitude), 15.0);
@@ -205,6 +221,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     });
   }
 
+  // Calcula el offset inferior para no solapar con la BottomNav
   double _bottomOffset(BuildContext context) =>
       70 + 20 + MediaQuery.of(context).padding.bottom;
 
@@ -214,8 +231,7 @@ class _ActivityScreenState extends State<ActivityScreen>
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ActivityViewModel>();
-    final allActivities = vm.activities;
-    final filteredActivities = _filterActivities(allActivities);
+    final filteredActivities = _filterActivities(vm.activities);
     final double bottomOffset = _bottomOffset(context);
 
     if (vm.isLoading || _loadingLocation) {
@@ -257,8 +273,9 @@ class _ActivityScreenState extends State<ActivityScreen>
           else
             _buildBottomList(filteredActivities, vm, bottomOffset),
 
+          // FAB crear actividad
           Positioned(
-            bottom: bottomOffset + -70,
+            bottom: bottomOffset - 70,
             right: 16,
             child: FloatingActionButton(
               backgroundColor: _colorVerdeBosque,
@@ -268,7 +285,7 @@ class _ActivityScreenState extends State<ActivityScreen>
             ),
           ),
 
-          //FAB ubicación
+          // FAB centrar en mi ubicación
           Positioned(
             top: MediaQuery.of(context).padding.top + 76,
             right: 16,
@@ -291,6 +308,8 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   // ----------------------------------------------------------
   // SEGMENTO: MAPA CON MARCADORES
+  // Muestra el mapa base CartoDB con marcadores personalizados
+  // para cada actividad filtrada y el marcador del usuario
   // ----------------------------------------------------------
   Widget _buildMap(List<SportActivity> activities) {
     return Positioned.fill(
@@ -305,6 +324,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                 setState(() {
                   _selectedLocation = point;
                   _selectedLocationText = "Ubicación seleccionada";
+                  _selectedLocationFull = "Ubicación seleccionada";
                 });
                 _dismissCard();
               },
@@ -317,6 +337,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                 retinaMode: RetinaMode.isHighDensity(context),
               ),
 
+              // Marcador del usuario
               if (_userLocation != null)
                 MarkerLayer(
                   markers: [
@@ -326,10 +347,10 @@ class _ActivityScreenState extends State<ActivityScreen>
                       height: 40,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Color(0xFF234D41).withOpacity(0.2),
+                          color: const Color(0xFF234D41).withOpacity(0.2),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Color(0xFF234D41),
+                            color: const Color(0xFF234D41),
                             width: 2,
                           ),
                         ),
@@ -343,6 +364,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                   ],
                 ),
 
+              // Marcadores de actividades
               MarkerLayer(
                 markers: activities.map((a) {
                   final bool isSelected = _selectedActivity?.id == a.id;
@@ -361,6 +383,7 @@ class _ActivityScreenState extends State<ActivityScreen>
             ],
           ),
 
+          // Overlay verde muy suave para unificar el tono con la app
           IgnorePointer(
             child: Container(color: _colorVerdeBosque.withOpacity(0.08)),
           ),
@@ -370,7 +393,9 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: BARRA SUPERIOR
+  // SEGMENTO: BARRA SUPERIOR DE BÚSQUEDA
+  // Buscador de ubicaciones con autocompletado Nominatim
+  // y selector de radio de búsqueda
   // ----------------------------------------------------------
   Widget _buildTopBar() {
     return Positioned(
@@ -420,7 +445,6 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                   ),
                 ),
-
                 if (_searchController.text.isNotEmpty)
                   GestureDetector(
                     onTap: () {
@@ -436,7 +460,6 @@ class _ActivityScreenState extends State<ActivityScreen>
                       ),
                     ),
                   ),
-
                 GestureDetector(
                   onTap: _showRadiusSelector,
                   child: Container(
@@ -556,7 +579,6 @@ class _ActivityScreenState extends State<ActivityScreen>
           final lat = double.parse(place['lat'] as String);
           final lon = double.parse(place['lon'] as String);
           final name = place['display_name'] as String;
-
           _searchController.text = name.split(',').first;
           _mapController.move(LatLng(lat, lon), 14.0);
           setState(() {});
@@ -583,6 +605,9 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
+  // ----------------------------------------------------------
+  // ICONO SEGÚN TIPO DE LUGAR (Nominatim)
+  // ----------------------------------------------------------
   IconData _getPlaceIcon(String type) {
     switch (type) {
       case 'city':
@@ -608,7 +633,8 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // SELECTOR DE RADIO
+  // SELECTOR DE RADIO DE BÚSQUEDA
+  // Modal con slider y botones rápidos (5, 10, 25, 50 km)
   // ----------------------------------------------------------
   void _showRadiusSelector() {
     showModalBottomSheet(
@@ -636,9 +662,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 const Text(
                   "Radio de búsqueda",
                   style: TextStyle(
@@ -647,16 +671,12 @@ class _ActivityScreenState extends State<ActivityScreen>
                     color: _colorVerdeBosque,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   "Mostrando actividades en ${_searchRadius.toInt()} km",
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
-
                 const SizedBox(height: 16),
-
                 Slider(
                   value: _searchRadius,
                   min: 1,
@@ -670,9 +690,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     setState(() => _searchRadius = v);
                   },
                 ),
-
                 const SizedBox(height: 8),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [5, 10, 25, 50].map((km) {
@@ -705,9 +723,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     );
                   }).toList(),
                 ),
-
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -736,7 +752,10 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: TARJETA DE DETALLE
+  // SEGMENTO: TARJETA DE DETALLE DE ACTIVIDAD
+  // Muestra información completa de la actividad seleccionada.
+  // Si el usuario es el organizador puede eliminarla.
+  // Si no, puede apuntarse o desapuntarse.
   // ----------------------------------------------------------
   Widget _buildDetailCard(
     SportActivity activity,
@@ -785,6 +804,7 @@ class _ActivityScreenState extends State<ActivityScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Cabecera: icono + título + nivel + botón cerrar
               Row(
                 children: [
                   Container(
@@ -878,6 +898,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
               const SizedBox(height: 14),
 
+              // Fila de ubicación completa + hora
               Row(
                 children: [
                   const Icon(
@@ -888,14 +909,13 @@ class _ActivityScreenState extends State<ActivityScreen>
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
+                      // Muestra la ubicación completa guardada en Firestore
                       activity.location,
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-
-                  //Hora de la actividad
                   const SizedBox(width: 8),
                   const Icon(
                     Icons.access_time_rounded,
@@ -916,6 +936,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
               const SizedBox(height: 14),
 
+              // Barra de progreso de plazas
               Row(
                 children: [
                   Text(
@@ -945,38 +966,82 @@ class _ActivityScreenState extends State<ActivityScreen>
 
               const SizedBox(height: 18),
 
-              //Botones según estado del usuario
+              // --------------------------------------------------
+              // BOTONES SEGÚN ROL DEL USUARIO
+              // Los demás ven Apuntarse / Desapuntarse / Lleno
+              // --------------------------------------------------
               if (isOrganizer)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: _colorVerdeMenta.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Eres el organizador",
-                      style: TextStyle(
-                        color: _colorVerdeBosque,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                Row(
+                  children: [
+                    // Chip informativo de organizador
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: _colorVerdeMenta.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Eres el organizador",
+                            style: TextStyle(
+                              color: _colorVerdeBosque,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+
+                    const SizedBox(width: 12),
+
+                    // Botón eliminar actividad propia
+                    ElevatedButton(
+                      onPressed: () =>
+                          _confirmDeleteActivity(context, vm, activity.id),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.delete_outline, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            "Eliminar",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 )
               else
                 Row(
                   children: [
-                    // Botón principal: Apuntarse / Desapuntarse / Lleno
+                    // Botón Apuntarse / Desapuntarse / Lleno
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
                           if (isJoined) {
-                            //Desapuntarse
+                            // Desapuntarse
                             final ok = await vm.leaveActivity(activity.id);
                             if (mounted && ok) {
                               _dismissCard();
+                              widget.onStatsChanged?.call();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text("Te has desapuntado"),
@@ -993,9 +1058,10 @@ class _ActivityScreenState extends State<ActivityScreen>
                             final ok = await vm.joinActivity(activity.id);
                             if (mounted && ok) {
                               _dismissCard();
+                              widget.onStatsChanged?.call();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text("Te has apuntado!"),
+                                  content: const Text("¡Te has apuntado!"),
                                   backgroundColor: _colorVerdeBosque,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
@@ -1069,7 +1135,120 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: LISTA MINI INFERIOR
+  // DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN DE ACTIVIDAD
+  // Elimina la actividad de Firestore y notifica a HomeScreen
+  // para que recargue las estadísticas.
+  // ----------------------------------------------------------
+  void _confirmDeleteActivity(
+    BuildContext context,
+    ActivityViewModel vm,
+    String activityId,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_sweep_rounded,
+                color: Colors.red,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "¿Eliminar actividad?",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _colorVerdeBosque,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Esta acción eliminará permanentemente el evento y notificará a los participantes apuntados.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final ok = await vm.deleteActivity(activityId);
+                  if (ok && mounted) {
+                    _dismissCard();
+                    widget.onStatsChanged?.call();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text("Actividad eliminada"),
+                        backgroundColor: Colors.grey[700],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: const Text(
+                  "Sí, eliminar",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Cancelar",
+                  style: TextStyle(
+                    color: _colorVerdeBosque,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // SEGMENTO: LISTA MINI INFERIOR DE ACTIVIDADES
+  // Carrusel horizontal con las actividades filtradas.
+  // Si no hay actividades en la zona muestra un mensaje.
   // ----------------------------------------------------------
   Widget _buildBottomList(
     List<SportActivity> activities,
@@ -1221,6 +1400,15 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   // ----------------------------------------------------------
   // SEGMENTO: BOTTOM SHEET CREAR ACTIVIDAD
+  // Formulario completo con:
+  //   - Nombre del evento
+  //   - Ubicación con autocompletado Nominatim
+  //   - Hora con showTimePicker
+  //   - Selector visual de deporte (chips animados)
+  //   - Selector visual de nivel (cards con colores)
+  //   - Slider de plazas (2-20)
+  // Al crear notifica a HomeScreen via onStatsChanged
+  // ----------------------------------------------------------
   // ----------------------------------------------------------
   void _showCreateActivitySheet(BuildContext context, ActivityViewModel vm) {
     final TextEditingController titleController = TextEditingController();
@@ -1236,9 +1424,11 @@ class _ActivityScreenState extends State<ActivityScreen>
     String selectedLevel = AppConstants.skillLevels.first;
     int totalSlots = 4;
     LatLng currentLocation = _selectedLocation ?? _userLocation ?? _initialPos;
+    String currentLocationName = _selectedLocationFull ?? '';
 
     final now = DateTime.now();
     TimeOfDay selectedTime = TimeOfDay(hour: (now.hour + 2) % 24, minute: 0);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -1323,7 +1513,6 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           const SizedBox(height: 24),
 
-                          // Campo nombre
                           _buildField(
                             controller: titleController,
                             label: "Nombre del evento",
@@ -1430,20 +1619,20 @@ class _ActivityScreenState extends State<ActivityScreen>
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            city.isNotEmpty
-                                                ? city.toString()
-                                                : name.split(',').first,
+                                            // Mostramos el nombre completo en la lista
+                                            name,
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                               color: _colorTextoTitulo,
                                             ),
-                                            maxLines: 1,
+                                            maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          if (country.isNotEmpty)
+                                          if (country.isNotEmpty &&
+                                              city.isNotEmpty)
                                             Text(
-                                              name,
+                                              country.toString(),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[500],
@@ -1467,19 +1656,14 @@ class _ActivityScreenState extends State<ActivityScreen>
                               final name = place['display_name'] as String;
                               final lat = double.parse(place['lat'] as String);
                               final lon = double.parse(place['lon'] as String);
-                              final address =
-                                  place['address'] as Map<String, dynamic>? ??
-                                  {};
-                              final city =
-                                  address['city'] ??
-                                  address['town'] ??
-                                  address['village'] ??
-                                  name.split(',').first;
 
-                              locationController.text = city.toString();
+                              locationController.text = name;
+
                               setModalState(() {
                                 currentLocation = LatLng(lat, lon);
+                                currentLocationName = name;
                               });
+
                               _mapController.move(LatLng(lat, lon), 15.0);
                             },
                             decorationBuilder: (context, child) => Material(
@@ -1506,7 +1690,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           const SizedBox(height: 14),
 
-                          //Selector de hora
+                          // Selector de hora
                           GestureDetector(
                             onTap: () async {
                               final picked = await showTimePicker(
@@ -1579,7 +1763,6 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           const SizedBox(height: 20),
 
-                          // Selector de deporte
                           _buildSportSelector(
                             selectedValue: selectedSport,
                             items: widget.userInterests,
@@ -1589,7 +1772,6 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           const SizedBox(height: 20),
 
-                          // Selector de nivel
                           _buildLevelSelector(
                             selectedValue: selectedLevel,
                             onChanged: (v) =>
@@ -1598,7 +1780,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           const SizedBox(height: 14),
 
-                          // Slider plazas
+                          // Slider de plazas
                           Row(
                             children: [
                               const Icon(
@@ -1637,6 +1819,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                   ),
 
+                  // Botón publicar
                   Padding(
                     padding: const EdgeInsets.only(top: 12, bottom: 24),
                     child: SizedBox(
@@ -1645,7 +1828,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                         onPressed: () async {
                           if (titleController.text.trim().isEmpty) return;
                           if (locationController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            scaffoldMessenger.showSnackBar(
                               const SnackBar(
                                 content: Text("Añade una ubicación al evento"),
                                 behavior: SnackBarBehavior.floating,
@@ -1666,7 +1849,9 @@ class _ActivityScreenState extends State<ActivityScreen>
                             id: '',
                             title: titleController.text.trim(),
                             sportType: selectedSport,
-                            location: locationController.text.trim(),
+                            location: currentLocationName.isNotEmpty
+                                ? currentLocationName
+                                : locationController.text.trim(),
                             latitude: currentLocation.latitude,
                             longitude: currentLocation.longitude,
                             totalSlots: totalSlots,
@@ -1681,9 +1866,10 @@ class _ActivityScreenState extends State<ActivityScreen>
 
                           if (mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            widget.onStatsChanged?.call();
+                            scaffoldMessenger.showSnackBar(
                               SnackBar(
-                                content: const Text("Actividad creada!"),
+                                content: const Text("¡Actividad creada!"),
                                 backgroundColor: _colorVerdeBosque,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -1723,6 +1909,8 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   // ----------------------------------------------------------
   // SELECTOR VISUAL DE DEPORTE
+  // Chips animados con icono — solo muestra los deportes
+  // favoritos del usuario definidos en el onboarding
   // ----------------------------------------------------------
   Widget _buildSportSelector({
     required String selectedValue,
@@ -1800,6 +1988,11 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   // ----------------------------------------------------------
   // SELECTOR VISUAL DE NIVEL
+  // Cards con color semántico por nivel:
+  //   Verde → Principiante
+  //   Azul  → Intermedio
+  //   Naranja → Avanzado
+  //   Rosa  → Profesional
   // ----------------------------------------------------------
   Widget _buildLevelSelector({
     required String selectedValue,
@@ -1888,7 +2081,7 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // HELPERS DEL FORMULARIO
+  // HELPER: CAMPO DE TEXTO DEL FORMULARIO
   // ----------------------------------------------------------
   Widget _buildField({
     required TextEditingController controller,
@@ -1926,7 +2119,9 @@ class _ActivityScreenState extends State<ActivityScreen>
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: MARCADOR PERSONALIZADO
+  // SEGMENTO: MARCADOR PERSONALIZADO DEL MAPA
+  // Círculo con icono del deporte y punta triangular inferior.
+  // El marcador seleccionado se agranda y cambia de color.
   // ----------------------------------------------------------
   Widget _buildCustomMarker(SportActivity a, bool isSelected) {
     return Column(
@@ -1967,7 +2162,9 @@ class _ActivityScreenState extends State<ActivityScreen>
 }
 
 // ============================================================
-// CUSTOM PAINTER: Punta triangular del marcador del mapa
+// CUSTOM PAINTER: Punta triangular inferior del marcador
+// Dibuja un triángulo apuntando hacia abajo para indicar
+// la posición exacta de la actividad en el mapa
 // ============================================================
 class _TrianglePainter extends CustomPainter {
   final Color color;

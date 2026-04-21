@@ -26,6 +26,10 @@ class ActivityService {
     }
   }
 
+  Future<void> deleteActivity(String activityId) async {
+    await _db.collection('activities').doc(activityId).delete();
+  }
+
   // ----------------------------------------------------------
   // STREAM DE ACTIVIDADES EN TIEMPO REAL
   // Ordenadas por fecha ascendente (próximas primero)

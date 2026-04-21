@@ -45,9 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _selectedIndex = 0;
 
-  // Stats desde la API
-  UserStats? _userStats;
-  bool _loadingStats = false;
+  // GlobalKey para acceder al estado de _StatsRow
+  // y recargar solo ese widget sin reconstruir la pantalla
+  final GlobalKey<_StatsRowState> _statsKey = GlobalKey<_StatsRowState>();
 
   // ----------------------------------------------------------
   // CICLO DE VIDA
@@ -76,17 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _userSports = List<String>.from(data['favoriteSports'] ?? []);
         });
       }
-
-      // Cargar stats desde la API
-      if (mounted) setState(() => _loadingStats = true);
-      try {
-        final stats = await ApiService().getUserStats(_user.uid);
-        if (mounted) setState(() => _userStats = stats);
-      } catch (e) {
-        debugPrint("Error cargando stats: $e");
-      } finally {
-        if (mounted) setState(() => _loadingStats = false);
-      }
     } catch (e) {
       debugPrint("Error al cargar datos de usuario: $e");
     } finally {
@@ -95,24 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _reloadStats() async {
-    if (_user == null) return;
-    debugPrint("FITCREW: _reloadStats iniciado");
-    setState(() => _loadingStats = true);
-    try {
-      final token = await _user.getIdToken();
-      debugPrint("FITCREW: Token obtenido: ${token?.substring(0, 20)}...");
-
-      final stats = await ApiService().getUserStats(_user.uid);
-      debugPrint(
-        "FITCREW: stats recibidas posts=${stats?.totalPosts}, joined=${stats?.totalActivitiesJoined}",
-      );
-
-      if (mounted) setState(() => _userStats = stats);
-    } catch (e) {
-      debugPrint("FITCREW: Error en stats: $e");
-    } finally {
-      if (mounted) setState(() => _loadingStats = false);
-    }
+    await _statsKey.currentState?.reload();
   }
 
   // ----------------------------------------------------------
@@ -207,7 +179,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       .deletePost(postId);
                   if (success && mounted) {
                     _showSnackBar("Actividad eliminada con éxito");
-                    // Recargar stats tras eliminar
                     await Future.delayed(const Duration(seconds: 1));
                     if (mounted) _reloadStats();
                   }
@@ -306,8 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildTopHeader(),
                 const SizedBox(height: 10),
-                // Stats en lugar del carrusel de deportes
-                _buildStatsRow(),
+                _StatsRow(key: _statsKey, uid: _user?.uid ?? ''),
                 const SizedBox(height: 15),
               ],
             ),
@@ -369,7 +339,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // --- Logo FitCrew ---
           RichText(
             text: const TextSpan(
               children: [
@@ -393,10 +362,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // --- Botones de acción ---
           Row(
             children: [
-              // Botón buscar personas
+              // Botón buscar personas con badge
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('follow_requests')
@@ -457,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(width: 8),
 
-              // Botón notificaciones
+              // Botón notificaciones con badge
               StreamBuilder<int>(
                 stream: NotificationService().getUnreadCountStream(),
                 builder: (context, snapshot) {
@@ -512,92 +480,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  // ----------------------------------------------------------
-  // SEGMENTO: FILA DE ESTADÍSTICAS
-  // Sustituye al carrusel de deportes favoritos
-  // ----------------------------------------------------------
-  Widget _buildStatsRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _buildStatChip(
-            icon: Icons.photo_camera_outlined,
-            label: "Posts",
-            value: _loadingStats ? "..." : "${_userStats?.totalPosts ?? 0}",
-          ),
-          const SizedBox(width: 10),
-          _buildStatChip(
-            icon: Icons.sports_outlined,
-            label: "Actividades",
-            value: _loadingStats
-                ? "..."
-                : "${_userStats?.totalActivitiesJoined ?? 0}",
-          ),
-          const SizedBox(width: 10),
-          _buildStatChip(
-            icon: Icons.local_fire_department_outlined,
-            label: "Racha",
-            value: _loadingStats
-                ? "..."
-                : "${_userStats?.currentStreakDays ?? 0}d",
-          ),
-          const SizedBox(width: 10),
-          _buildStatChip(
-            icon: Icons.emoji_events_outlined,
-            label: "Organizado",
-            value: _loadingStats
-                ? "..."
-                : "${_userStats?.totalActivitiesOrganized ?? 0}",
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: _colorVerdeMenta.withOpacity(0.35),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _colorVerdeBosque.withOpacity(0.08)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: _colorVerdeBosque),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _colorVerdeBosque,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: _colorVerdeBosque.withOpacity(0.7),
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -901,11 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildNavItem(Icons.home_outlined, Icons.home, 0),
             _buildNavItem(Icons.search_rounded, Icons.search_rounded, 1),
             _buildCentralAddButton(),
-            _buildNavItem(
-              Icons.fitness_center_outlined,
-              Icons.fitness_center_rounded,
-              2,
-            ),
+            _buildNavItem(Icons.map_outlined, Icons.map_rounded, 2),
             _buildNavItem(Icons.person_outline_rounded, Icons.person, 3),
           ],
         ),
@@ -1131,6 +1009,127 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// WIDGET: _StatsRow
+// Widget independiente con su propio estado para que al
+// recargar las stats solo se reconstruya este widget y no
+// toda la HomeScreen ni el feed de posts
+// ============================================================
+class _StatsRow extends StatefulWidget {
+  final String uid;
+  const _StatsRow({super.key, required this.uid});
+
+  @override
+  State<_StatsRow> createState() => _StatsRowState();
+}
+
+class _StatsRowState extends State<_StatsRow> {
+  static const _colorVerdeBosque = Color(0xFF234D41);
+  static const _colorVerdeMenta = Color(0xFFD3E6DB);
+
+  UserStats? _userStats;
+  bool _loadingStats = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final stats = await ApiService().getUserStats(widget.uid);
+      if (mounted) setState(() => _userStats = stats);
+    } catch (e) {
+      debugPrint("Error cargando stats: $e");
+    } finally {
+      if (mounted) setState(() => _loadingStats = false);
+    }
+  }
+
+  //Método público llamado desde HomeScreen via GlobalKey
+  Future<void> reload() async {
+    if (!mounted) return;
+    setState(() => _loadingStats = true);
+    await _loadStats();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          _chip(
+            Icons.photo_camera_outlined,
+            "Posts",
+            _loadingStats ? "..." : "${_userStats?.totalPosts ?? 0}",
+          ),
+          const SizedBox(width: 10),
+          _chip(
+            Icons.sports_outlined,
+            "Actividades",
+            _loadingStats ? "..." : "${_userStats?.totalActivitiesJoined ?? 0}",
+          ),
+          const SizedBox(width: 10),
+          _chip(
+            Icons.local_fire_department_outlined,
+            "Racha",
+            _loadingStats ? "..." : "${_userStats?.currentStreakDays ?? 0}d",
+          ),
+          const SizedBox(width: 10),
+          _chip(
+            Icons.emoji_events_outlined,
+            "Organizado",
+            _loadingStats
+                ? "..."
+                : "${_userStats?.totalActivitiesOrganized ?? 0}",
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(IconData icon, String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: _colorVerdeMenta.withOpacity(0.35),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _colorVerdeBosque.withOpacity(0.08)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: _colorVerdeBosque),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: _colorVerdeBosque,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: _colorVerdeBosque.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

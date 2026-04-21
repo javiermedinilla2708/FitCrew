@@ -115,6 +115,17 @@ class ActivityViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteActivity(String activityId) async {
+    try {
+      await _activityService.deleteActivity(activityId);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _notify();
+      return false;
+    }
+  }
+
   // ----------------------------------------------------------
   // APUNTARSE A UNA ACTIVIDAD
   // Notifica al organizador
