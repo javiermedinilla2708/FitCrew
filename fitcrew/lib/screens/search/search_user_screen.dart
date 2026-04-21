@@ -1,6 +1,8 @@
 // ============================================================
 // lib/screens/search/search_users_screen.dart
-// Pantalla de búsqueda de usuarios con solicitudes de seguimiento
+// Pantalla de búsqueda de usuarios con dos pestañas:
+//   - Buscar: buscador por nombre + sugerencias por deportes
+//   - Solicitudes: gestión de solicitudes de seguimiento recibidas
 // ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -40,6 +42,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
 
   final Map<String, String> _followStatusCache = {};
 
+  final Map<String, Map<String, String>> _knownRequests = {};
+
   // ----------------------------------------------------------
   // CICLO DE VIDA
   // ----------------------------------------------------------
@@ -59,6 +63,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
 
   // ----------------------------------------------------------
   // CARGAR SUGERENCIAS
+  // Busca usuarios con deportes favoritos en común y carga
+  // su estado de seguimiento para el botón correspondiente
   // ----------------------------------------------------------
   Future<void> _loadSuggestions() async {
     if (_loadingSuggestions) return;
@@ -119,7 +125,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // BÚSQUEDA DE USUARIOS
+  // BÚSQUEDA DE USUARIOS POR NOMBRE
+  // Evita llamadas duplicadas comparando con _lastQuery
   // ----------------------------------------------------------
   Future<void> _search(String query) async {
     if (query.trim() == _lastQuery) return;
@@ -150,6 +157,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
 
   // ----------------------------------------------------------
   // ACCIÓN DE SEGUIMIENTO
+  // Gestiona el ciclo completo: enviar, cancelar o dejar de seguir
   // ----------------------------------------------------------
   Future<void> _handleFollowAction(String uid, String name) async {
     final status = _followStatusCache[uid] ?? 'none';
@@ -175,6 +183,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     }
   }
 
+  // ----------------------------------------------------------
+  // SNACKBAR
+  // ----------------------------------------------------------
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -269,7 +280,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
           ),
         ),
       ),
-      // Se encarga de la seleccion de las pestañas
       body: SafeArea(
         child: TabBarView(
           controller: _tabController,
@@ -286,7 +296,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     return Column(
       children: [
         _buildSearchBar(),
-
         Expanded(
           child: _isSearching
               ? const Center(
@@ -304,18 +313,33 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
 
   // ----------------------------------------------------------
   // PESTAÑA 2: SOLICITUDES RECIBIDAS
+  // Mantiene las tarjetas aceptadas visibles en pantalla
+  // usando _knownRequests para que no desaparezcan cuando
+  // Firestore elimina el documento al aceptar la solicitud
   // ----------------------------------------------------------
   Widget _buildRequestsTab() {
     return StreamBuilder<QuerySnapshot>(
       stream: _followService.getPendingRequestsStream(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            _knownRequests.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(color: _colorVerdeBosque),
           );
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        final pendingDocs = snapshot.data?.docs ?? [];
+        for (final doc in pendingDocs) {
+          if (!_knownRequests.containsKey(doc.id)) {
+            final data = doc.data() as Map<String, dynamic>;
+            _knownRequests[doc.id] = {
+              'fromUid': data['fromUid'] as String,
+              'fromName': data['fromName'] as String? ?? 'Usuario',
+            };
+          }
+        }
+
+        if (_knownRequests.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -345,18 +369,26 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
           );
         }
 
-        final requests = snapshot.data!.docs;
-
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          itemCount: requests.length,
+          itemCount: _knownRequests.length,
           itemBuilder: (context, index) {
-            final data = requests[index].data() as Map<String, dynamic>;
-            final requestId = requests[index].id;
+            final requestId = _knownRequests.keys.elementAt(index);
+            final data = _knownRequests[requestId]!;
             final fromUid = data['fromUid'] as String;
-            final fromName = data['fromName'] as String? ?? 'Usuario';
+            final fromName = data['fromName'] as String;
 
-            return _buildRequestCard(requestId, fromUid, fromName);
+            return _RequestCard(
+              key: ValueKey(requestId),
+              requestId: requestId,
+              fromUid: fromUid,
+              fromName: fromName,
+              followService: _followService,
+              onSnackBar: _showSnackBar,
+              followStatusCache: _followStatusCache,
+              // Al rechazar eliminamos la tarjeta del mapa local
+              onDismiss: () => setState(() => _knownRequests.remove(requestId)),
+            );
           },
         );
       },
@@ -430,121 +462,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // TARJETA DE SOLICITUD
-  // ----------------------------------------------------------
-  Widget _buildRequestCard(String requestId, String fromUid, String fromName) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: _colorVerdeBosque.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: _colorVerdeMenta,
-            child: Text(
-              fromName[0].toUpperCase(),
-              style: const TextStyle(
-                color: _colorVerdeBosque,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fromName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: _colorTextoTitulo,
-                  ),
-                ),
-                Text(
-                  "Quiere seguirte",
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-
-          // Botón aceptar
-          GestureDetector(
-            onTap: () async {
-              final ok = await _followService.acceptFollowRequest(
-                requestId,
-                fromUid,
-              );
-              if (ok && mounted) {
-                _showSnackBar("Ahora sigues a $fromName");
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: _colorVerdeBosque,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                "Aceptar",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Botón rechazar
-          GestureDetector(
-            onTap: () async {
-              final ok = await _followService.rejectFollowRequest(requestId);
-              if (ok && mounted) {
-                _showSnackBar("Solicitud rechazada");
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "Rechazar",
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ----------------------------------------------------------
   // ESTADO INICIAL CON SUGERENCIAS
+  // Muestra usuarios con deportes en común mientras no
+  // hay búsqueda activa
   // ----------------------------------------------------------
   Widget _buildInitialState() {
     if (_loadingSuggestions) {
@@ -607,7 +527,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             ],
           ),
         ),
-
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -637,7 +556,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // LISTA DE RESULTADOS
+  // LISTA DE RESULTADOS DE BÚSQUEDA
   // ----------------------------------------------------------
   Widget _buildResultsList() {
     return ListView.builder(
@@ -694,9 +613,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
               ),
             ),
           ),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -719,7 +636,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
               ],
             ),
           ),
-
           _buildFollowButton(uid, name, config),
         ],
       ),
@@ -727,7 +643,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // TARJETA DE SUGERENCIA — con deportes en común
+  // TARJETA DE SUGERENCIA — con chips de deportes en común
   // ----------------------------------------------------------
   Widget _buildSuggestionCard(
     String uid,
@@ -769,9 +685,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
                   ),
                 ),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -794,11 +708,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
                   ],
                 ),
               ),
-
               _buildFollowButton(uid, name, config),
             ],
           ),
-
           if (commonSports.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -843,7 +755,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // HELPER: Botón de seguimiento
+  // HELPER: Botón de seguimiento animado
   // ----------------------------------------------------------
   Widget _buildFollowButton(
     String uid,
@@ -886,7 +798,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // HELPER: Configuración del botón según estado
+  // HELPER: Configuración del botón según estado de seguimiento
   // ----------------------------------------------------------
   Map<String, dynamic> _buttonConfig(String status) {
     switch (status) {
@@ -915,7 +827,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   }
 
   // ----------------------------------------------------------
-  // ESTADO VACÍO
+  // ESTADO VACÍO — sin resultados de búsqueda
   // ----------------------------------------------------------
   Widget _buildEmptyState() {
     return Center(
@@ -925,7 +837,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
           Icon(Icons.search_off_rounded, size: 64, color: _colorVerdeMenta),
           const SizedBox(height: 16),
           Text(
-            "No se encontró \"$_lastQuery\"",
+            "No se encontro \"$_lastQuery\"",
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -937,6 +849,326 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             "Prueba con otro nombre",
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// WIDGET: _RequestCard
+// Tarjeta de solicitud con estado propio que persiste en
+// pantalla tras aceptar, permitiendo al usuario pulsar
+// "Seguir también" sin que la tarjeta desaparezca al
+// actualizarse el StreamBuilder de Firestore
+// ============================================================
+class _RequestCard extends StatefulWidget {
+  final String requestId;
+  final String fromUid;
+  final String fromName;
+  final FollowService followService;
+  final void Function(String) onSnackBar;
+  final Map<String, String> followStatusCache;
+  final VoidCallback onDismiss;
+
+  const _RequestCard({
+    super.key,
+    required this.requestId,
+    required this.fromUid,
+    required this.fromName,
+    required this.followService,
+    required this.onSnackBar,
+    required this.followStatusCache,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_RequestCard> createState() => _RequestCardState();
+}
+
+class _RequestCardState extends State<_RequestCard> {
+  static const _colorVerdeBosque = Color(0xFF234D41);
+  static const _colorVerdeMenta = Color(0xFFD3E6DB);
+  static const _colorTextoTitulo = Color(0xFF0F1D19);
+
+  bool _accepted = false;
+  bool _loadingAccept = false;
+  bool _loadingFollow = false;
+  bool _alreadyFollowing = false;
+
+  // ----------------------------------------------------------
+  // ACEPTAR SOLICITUD
+  // Acepta la solicitud en Firestore y muestra el botón
+  // "Seguir también" si aún no seguimos al emisor
+  // ----------------------------------------------------------
+  Future<void> _accept() async {
+    setState(() => _loadingAccept = true);
+    try {
+      final ok = await widget.followService.acceptFollowRequest(
+        widget.requestId,
+        widget.fromUid,
+      );
+      if (ok && mounted) {
+        final status =
+            widget.followStatusCache[widget.fromUid] ??
+            await widget.followService.getFollowStatus(widget.fromUid);
+
+        setState(() {
+          _accepted = true;
+          _alreadyFollowing = status == 'following';
+        });
+
+        widget.onSnackBar("Has aceptado a ${widget.fromName}");
+      }
+    } finally {
+      if (mounted) setState(() => _loadingAccept = false);
+    }
+  }
+
+  // ----------------------------------------------------------
+  // SEGUIR TAMBIÉN
+  // Envía una solicitud de seguimiento de vuelta al emisor
+  // sin necesidad de ir a la pestaña Buscar
+  // ----------------------------------------------------------
+  Future<void> _followBack() async {
+    setState(() => _loadingFollow = true);
+    try {
+      final sent = await widget.followService.sendFollowRequest(
+        widget.fromUid,
+        widget.fromName,
+      );
+      if (sent && mounted) {
+        widget.followStatusCache[widget.fromUid] = 'pending';
+        widget.onSnackBar("Solicitud enviada a ${widget.fromName}");
+        setState(() => _alreadyFollowing = true);
+      }
+    } finally {
+      if (mounted) setState(() => _loadingFollow = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _colorVerdeBosque.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: _colorVerdeMenta,
+                child: Text(
+                  widget.fromName[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: _colorVerdeBosque,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.fromName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: _colorTextoTitulo,
+                      ),
+                    ),
+                    Text(
+                      _accepted ? "Solicitud aceptada" : "Quiere seguirte",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _accepted ? _colorVerdeBosque : Colors.grey[500],
+                        fontWeight: _accepted
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              if (!_accepted) ...[
+                // Boton Aceptar
+                GestureDetector(
+                  onTap: _loadingAccept ? null : _accept,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _colorVerdeBosque,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: _loadingAccept
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Aceptar",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Boton Rechazar
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await widget.followService.rejectFollowRequest(
+                      widget.requestId,
+                    );
+                    if (ok && mounted) {
+                      widget.onSnackBar("Solicitud rechazada");
+                      widget.onDismiss();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "Rechazar",
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: _colorVerdeMenta,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: _colorVerdeBosque,
+                    size: 18,
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          // --------------------------------------------------
+          // Boton "Seguir también"
+          // --------------------------------------------------
+          if (_accepted && !_alreadyFollowing) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: _loadingFollow ? null : _followBack,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _colorVerdeMenta.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _colorVerdeBosque.withOpacity(0.25),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_loadingFollow)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            color: _colorVerdeBosque,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      else ...[
+                        const Icon(
+                          Icons.people_rounded,
+                          size: 16,
+                          color: _colorVerdeBosque,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          "Seguir también",
+                          style: TextStyle(
+                            color: _colorVerdeBosque,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          // --------------------------------------------------
+          // Confirmación de seguimiento mutuo
+          // Aparece tras pulsar "Seguir también"
+          // --------------------------------------------------
+          if (_accepted && _alreadyFollowing) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.favorite_rounded, size: 14, color: Colors.grey[400]),
+                const SizedBox(width: 6),
+                Text(
+                  "Ya os seguis mutuamente",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
