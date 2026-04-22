@@ -25,32 +25,45 @@ def verify_token(authorization: str) -> str:
 
 # ----------------------------------------------------------
 # GET /ranking/global
-# Top 10 usuarios por número de actividades totales
 # ----------------------------------------------------------
-@router.get("/global", response_model=list[RankingEntry])
-async def get_global_ranking(authorization: str = Header(...)):
+@router.get(
+    "/global",
+    response_model=list[RankingEntry],
+    summary="Ranking global de usuarios",
+    description="""
+Devuelve el top 10 de usuarios ordenados por número total de actividades
+(organizadas + participadas).
+
+Cada entrada incluye la posición, nombre, total de actividades,
+deporte favorito y foto de perfil si la tiene.
+    """,
+    response_description="Lista de hasta 10 usuarios ordenados de mayor a menor actividad.",
+    responses={
+        200: {"description": "Ranking obtenido correctamente"},
+        401: {"description": "Token de autenticación inválido o expirado"},
+        500: {"description": "Error interno del servidor"},
+    },
+)
+async def get_global_ranking(
+    authorization: str = Header(
+        ...,
+        description="Bearer token de Firebase Auth. Formato: 'Bearer <token>'",
+    ),
+):
     verify_token(authorization)
 
     try:
-        users = db.collection("users").get()
+        users   = db.collection("users").get()
         ranking = []
 
         for user_doc in users:
             uid       = user_doc.id
             user_data = user_doc.to_dict()
 
-            # Actividades organizadas + en las que participó
-            organized = (
-                db.collection("activities").where("organizerId", "==", uid).get()
-            )
-            joined = (
-                db.collection("activities")
-                .where("participants", "array_contains", uid)
-                .get()
-            )
+            organized        = db.collection("activities").where("organizerId", "==", uid).get()
+            joined           = db.collection("activities").where("participants", "array_contains", uid).get()
             total_activities = len(organized) + len(joined)
 
-            # Deporte más practicado
             sport_counts: dict[str, int] = {}
             for activity in joined:
                 sport = activity.to_dict().get("sportType", "")
@@ -59,22 +72,19 @@ async def get_global_ranking(authorization: str = Header(...)):
 
             favorite_sport = (
                 max(sport_counts, key=sport_counts.get)
-                if sport_counts
-                else None
+                if sport_counts else None
             )
 
             ranking.append({
-                "uid": uid,
-                "name": user_data.get("name", "Usuario"),
+                "uid":              uid,
+                "name":             user_data.get("name", "Usuario"),
                 "total_activities": total_activities,
-                "favorite_sport": favorite_sport,
-                "profile_pic": user_data.get("profilePic"),
+                "favorite_sport":   favorite_sport,
+                "profile_pic":      user_data.get("profilePic"),
             })
 
-        # Ordenamos por total de actividades
         ranking.sort(key=lambda x: x["total_activities"], reverse=True)
 
-        # Añadimos la posición
         return [
             RankingEntry(position=i + 1, **entry)
             for i, entry in enumerate(ranking[:10])
@@ -88,47 +98,56 @@ async def get_global_ranking(authorization: str = Header(...)):
 
 # ----------------------------------------------------------
 # GET /ranking/sport/{sport}
-# Top 10 usuarios por deporte específico
 # ----------------------------------------------------------
-@router.get("/sport/{sport}", response_model=list[RankingEntry])
+@router.get(
+    "/sport/{sport}",
+    response_model=list[RankingEntry],
+    summary="Ranking por deporte específico",
+    description="""
+Devuelve el top 10 de usuarios en un deporte concreto, ordenados
+por número de actividades de ese deporte (organizadas + participadas).
+
+Solo aparecen usuarios con al menos una actividad del deporte indicado.
+
+**Ejemplo de valores para `sport`:** `Padel`, `Running`, `Basket`, `Ciclismo`
+    """,
+    response_description="Lista de hasta 10 usuarios ordenados por actividad en el deporte indicado.",
+    responses={
+        200: {"description": "Ranking por deporte obtenido correctamente"},
+        401: {"description": "Token de autenticación inválido o expirado"},
+        500: {"description": "Error interno del servidor"},
+    },
+)
 async def get_sport_ranking(
     sport: str,
-    authorization: str = Header(...),
+    authorization: str = Header(
+        ...,
+        description="Bearer token de Firebase Auth. Formato: 'Bearer <token>'",
+    ),
 ):
     verify_token(authorization)
 
     try:
-        users = db.collection("users").get()
+        users   = db.collection("users").get()
         ranking = []
 
         for user_doc in users:
             uid       = user_doc.id
             user_data = user_doc.to_dict()
 
-            # Solo actividades de ese deporte
-            joined = (
-                db.collection("activities")
-                .where("participants", "array_contains", uid)
-                .where("sportType", "==", sport)
-                .get()
-            )
-            organized = (
-                db.collection("activities")
-                .where("organizerId", "==", uid)
-                .where("sportType", "==", sport)
-                .get()
-            )
+            joined    = db.collection("activities").where("participants", "array_contains", uid).where("sportType", "==", sport).get()
+            organized = db.collection("activities").where("organizerId", "==", uid).where("sportType", "==", sport).get()
 
             total = len(joined) + len(organized)
             if total == 0:
                 continue
 
             ranking.append({
-                "uid": uid,
-                "name": user_data.get("name", "Usuario"),
+                "uid":              uid,
+                "name":             user_data.get("name", "Usuario"),
                 "total_activities": total,
-                "favorite_sport": sport,
-                "profile_pic": user_data.get("profilePic"),
+                "favorite_sport":   sport,
+                "profile_pic":      user_data.get("profilePic"),
             })
 
         ranking.sort(key=lambda x: x["total_activities"], reverse=True)
