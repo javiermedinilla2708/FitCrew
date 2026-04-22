@@ -45,10 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _selectedIndex = 0;
 
-  // GlobalKey para acceder al estado de _StatsRow
-  // y recargar solo ese widget sin reconstruir la pantalla
   final GlobalKey<_StatsRowState> _statsKey = GlobalKey<_StatsRowState>();
 
+  final GlobalKey<ProfileScreenState> _profileKey =
+      GlobalKey<ProfileScreenState>();
   // ----------------------------------------------------------
   // CICLO DE VIDA
   // ----------------------------------------------------------
@@ -849,8 +849,16 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const SizedBox.shrink(),
         const RankingScreen(),
-        ActivityScreen(userInterests: _userSports),
+        ActivityScreen(
+          userInterests: _userSports,
+          onStatsChanged: () async {
+            await Future.delayed(const Duration(seconds: 1));
+            _reloadStats();
+            _profileKey.currentState?.reload();
+          },
+        ),
         ProfileScreen(
+          key: _profileKey,
           userSports: _userSports,
           userEmail: _user?.email ?? "",
           userName: _currentUserName,
