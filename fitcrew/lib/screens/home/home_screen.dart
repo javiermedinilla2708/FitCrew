@@ -124,12 +124,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: Colors.grey[50],
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.delete_sweep_rounded,
-                color: Colors.red,
+                color: _colorVerdeBosque,
                 size: 40,
               ),
             ),
@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: _colorVerdeBosque,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -558,13 +558,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Icon(
                               Icons.delete_outline,
-                              color: Colors.red,
+                              color: _colorVerdeBosque,
                               size: 20,
                             ),
                             SizedBox(width: 10),
                             Text(
                               "Eliminar post",
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: _colorVerdeBosque),
                             ),
                           ],
                         ),

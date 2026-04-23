@@ -1001,7 +1001,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                       onPressed: () =>
                           _confirmDeleteActivity(context, vm, activity.id),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
+                        backgroundColor: _colorVerdeBosque,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           vertical: 14,
@@ -1074,7 +1074,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isJoined
-                              ? Colors.red.shade400
+                              ? _colorVerdeBosque
                               : isFull
                               ? Colors.grey
                               : _colorVerdeBosque,
@@ -1156,12 +1156,12 @@ class _ActivityScreenState extends State<ActivityScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: Colors.grey[50],
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.delete_sweep_rounded,
-                color: Colors.red,
+                color: _colorVerdeBosque,
                 size: 40,
               ),
             ),
@@ -1190,7 +1190,7 @@ class _ActivityScreenState extends State<ActivityScreen>
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: _colorVerdeBosque,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 15),
