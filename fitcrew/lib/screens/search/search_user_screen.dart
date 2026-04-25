@@ -6,8 +6,11 @@
 // Incluye historial de búsquedas recientes con SQLite (sqflite)
 // ============================================================
 
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/screens/profile/user_profile_screen.dart';
 import 'package:fitcrew/services/follow_services.dart';
 import 'package:fitcrew/services/search_history_service.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +86,14 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   Future<void> _onUserTapped(String uid, String name) async {
     await _historyService.saveSearch(uid, name);
     await _loadHistory();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserProfileScreen(uid: uid, name: name),
+        ),
+      );
+    }
   }
 
   // ----------------------------------------------------------
@@ -134,6 +145,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             'name': data['name'] ?? 'Usuario',
             'favoriteSports': theirSports,
             'commonSports': commonSports,
+            'profilePic': data['profilePic'],
           });
         }
       }
@@ -653,12 +665,15 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             final sports = List<String>.from(user['favoriteSports'] ?? []);
             final commonSports = List<String>.from(user['commonSports'] ?? []);
             final status = _followStatusCache[uid] ?? 'none';
+            final profilePic = user['profilePic'] as String?;
+
             return _buildSuggestionCard(
               uid,
               name,
               sports,
               commonSports,
               status,
+              profilePic,
             );
           }),
         ],
@@ -680,8 +695,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
         final name = user['name'] as String? ?? 'Usuario';
         final sports = List<String>.from(user['favoriteSports'] ?? []);
         final status = _followStatusCache[uid] ?? 'none';
+        final profilePic = user['profilePic'] as String?;
 
-        return _buildUserCard(uid, name, sports, status);
+        return _buildUserCard(uid, name, sports, status, profilePic);
       },
     );
   }
@@ -695,11 +711,11 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     String name,
     List<String> sports,
     String status,
+    String? profilePic,
   ) {
     final config = _buttonConfig(status);
 
     return GestureDetector(
-      // Guarda en SQLite al pulsar la tarjeta
       onTap: () => _onUserTapped(uid, name),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -720,14 +736,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             CircleAvatar(
               radius: 26,
               backgroundColor: _colorVerdeMenta,
-              child: Text(
-                name[0].toUpperCase(),
-                style: const TextStyle(
-                  color: _colorVerdeBosque,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
+              backgroundImage: profilePic != null && profilePic.isNotEmpty
+                  ? MemoryImage(base64Decode(profilePic))
+                  : null,
+              child: profilePic == null || profilePic.isEmpty
+                  ? Text(
+                      name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: _colorVerdeBosque,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -769,11 +790,11 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     List<String> sports,
     List<String> commonSports,
     String status,
+    String? profilePic,
   ) {
     final config = _buttonConfig(status);
 
     return GestureDetector(
-      // Guarda en SQLite al pulsar la tarjeta de sugerencia
       onTap: () => _onUserTapped(uid, name),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -794,17 +815,23 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
           children: [
             Row(
               children: [
+                // ✅ Muestra foto si existe, inicial si no
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: _colorVerdeMenta,
-                  child: Text(
-                    name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: _colorVerdeBosque,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
+                  backgroundImage: profilePic != null && profilePic.isNotEmpty
+                      ? MemoryImage(base64Decode(profilePic))
+                      : null,
+                  child: profilePic == null || profilePic.isEmpty
+                      ? Text(
+                          name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: _colorVerdeBosque,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

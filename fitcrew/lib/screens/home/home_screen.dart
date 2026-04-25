@@ -5,6 +5,7 @@ import 'package:fitcrew/screens/activities/activities_screen.dart';
 import 'package:fitcrew/screens/notifications/notification_screen.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
 import 'package:fitcrew/screens/profile/profile_screen.dart';
+import 'package:fitcrew/screens/profile/user_profile_screen.dart';
 import 'package:fitcrew/screens/ranking/ranking_screen.dart';
 import 'package:fitcrew/screens/search/search_user_screen.dart';
 import 'package:fitcrew/services/api_service.dart';
@@ -318,6 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     data['imageUrl'],
                     data['description'] ?? "",
                     data['userId'] ?? "",
+                    data['profilePic'],
                   );
                 }, childCount: posts.length),
               ),
@@ -495,6 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? imageStr,
     String description,
     String postOwnerId,
+    String? profilePic,
   ) {
     final bool isMyPost = _user?.uid == postOwnerId;
 
@@ -519,14 +522,33 @@ class _HomeScreenState extends State<HomeScreen> {
               horizontal: 20,
               vertical: 5,
             ),
-            leading: CircleAvatar(
-              backgroundColor: _colorVerdeMenta,
-              child: Text(
-                userName[0].toUpperCase(),
-                style: const TextStyle(
-                  color: _colorVerdeBosque,
-                  fontWeight: FontWeight.bold,
-                ),
+            leading: GestureDetector(
+              onTap: () {
+                if (postOwnerId.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          UserProfileScreen(uid: postOwnerId, name: userName),
+                    ),
+                  );
+                }
+              },
+              child: CircleAvatar(
+                key: ValueKey(profilePic ?? userName),
+                backgroundColor: _colorVerdeMenta,
+                backgroundImage: profilePic != null && profilePic.isNotEmpty
+                    ? MemoryImage(base64Decode(profilePic))
+                    : null,
+                child: profilePic == null || profilePic.isEmpty
+                    ? Text(
+                        userName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: _colorVerdeBosque,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
               ),
             ),
             title: Text(

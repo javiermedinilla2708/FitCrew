@@ -7,6 +7,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -92,11 +93,21 @@ class PostViewModel extends ChangeNotifier {
       final user = FirebaseAuth.instance.currentUser;
       final postId = const Uuid().v4();
 
+      String? profilePicB64;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        profilePicB64 = doc.data()?['profilePic'];
+      }
+
       final newPost = Post(
         id: postId,
         userId: user?.uid ?? '',
         userName: user?.displayName ?? 'Usuario Fit',
         userPic: user?.photoURL,
+        profilePic: profilePicB64,
         sportType: sportType,
         description: description,
         imageUrl: _base64Image,

@@ -14,6 +14,7 @@ class Post {
   // CAMPOS
   // ----------------------------------------------------------
   final String id; // ID del documento en Firestore
+  final String? profilePic; // Foto del usuario
   final String userId; // UID del autor del post
   final String userName; // Nombre del autor en el momento de publicar
   final String? userPic; // URL de foto de perfil del autor
@@ -27,6 +28,7 @@ class Post {
 
   const Post({
     required this.id,
+    this.profilePic,
     required this.userId,
     required this.userName,
     this.userPic,
@@ -48,6 +50,7 @@ class Post {
     return Post(
       id: docId,
       userId: map['userId'] ?? '',
+      profilePic: map['profilePic'],
       userName: map['userName'] ?? 'Usuario Fit',
       userPic: map['userPic'],
       sportType: map['sportType'] ?? 'Otros',
@@ -70,6 +73,7 @@ class Post {
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
+      'profilePic': profilePic,
       'userName': userName,
       'userPic': userPic,
       'sportType': sportType,

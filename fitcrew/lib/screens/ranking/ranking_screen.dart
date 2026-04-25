@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/services/api_service.dart';
 import 'package:fitcrew/viewmodels/stats_view_model.dart';
@@ -444,14 +446,20 @@ class _RankingScreenState extends State<RankingScreen>
           CircleAvatar(
             radius: 22,
             backgroundColor: _colorVerdeMenta,
-            child: Text(
-              entry.name.isNotEmpty ? entry.name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                color: _colorVerdeBosque,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+            backgroundImage:
+                entry.profilePic != null && entry.profilePic!.isNotEmpty
+                ? MemoryImage(base64Decode(entry.profilePic!))
+                : null,
+            child: entry.profilePic == null || entry.profilePic!.isEmpty
+                ? Text(
+                    entry.name.isNotEmpty ? entry.name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: _colorVerdeBosque,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  )
+                : null,
           ),
 
           const SizedBox(width: 12),

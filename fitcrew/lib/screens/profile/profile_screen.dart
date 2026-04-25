@@ -289,17 +289,6 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
-
-        const SizedBox(height: 4),
-
-        const Text(
-          "Miembro Elite de FitCrew",
-          style: TextStyle(
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-          ),
-        ),
       ],
     );
   }
@@ -1353,7 +1342,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           }
 
                           try {
-                            // Guardar en Firestore
+                            // Guardar perfil en Firestore
                             await FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(_uid)
@@ -1363,6 +1352,26 @@ class ProfileScreenState extends State<ProfileScreen> {
                                   'profilePic': previewPicB64,
                                   'favoriteSports': selectedSports,
                                 });
+
+                            // Actualizar profilePic en todos los posts del usuario
+                            // Solo si la foto ha cambiado
+                            if (previewPicB64 != _currentPicB64) {
+                              final posts = await FirebaseFirestore.instance
+                                  .collection('posts')
+                                  .where('userId', isEqualTo: _uid)
+                                  .get();
+
+                              if (posts.docs.isNotEmpty) {
+                                final batch = FirebaseFirestore.instance
+                                    .batch();
+                                for (final doc in posts.docs) {
+                                  batch.update(doc.reference, {
+                                    'profilePic': previewPicB64,
+                                  });
+                                }
+                                await batch.commit();
+                              }
+                            }
 
                             // Actualizar displayName en Firebase Auth
                             await FirebaseAuth.instance.currentUser
