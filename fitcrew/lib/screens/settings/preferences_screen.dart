@@ -25,16 +25,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   final String _uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   bool _notificationsOn = true;
-  String _language = 'es';
-  bool _loading = true;
 
-  // Idiomas disponibles
-  final List<Map<String, String>> _languages = [
-    {'code': 'es', 'label': 'Español'},
-    {'code': 'en', 'label': 'English'},
-    {'code': 'fr', 'label': 'Français'},
-    {'code': 'de', 'label': 'Deutsch'},
-  ];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -55,7 +47,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         final data = doc.data()!;
         setState(() {
           _notificationsOn = data['notificationsOn'] ?? true;
-          _language = data['language'] ?? 'es';
         });
       }
     } catch (e) {
@@ -90,32 +81,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       }
     } catch (e) {
       setState(() => _notificationsOn = !value);
-    }
-  }
-
-  // ----------------------------------------------------------
-  // CAMBIAR IDIOMA
-  // ----------------------------------------------------------
-  Future<void> _changeLanguage(String code) async {
-    setState(() => _language = code);
-    try {
-      await _userService.updateLanguage(_uid, code);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Idioma actualizado. Se aplicara en el proximo inicio de sesion.",
-            ),
-            backgroundColor: _colorVerdeBosque,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error actualizando idioma: $e");
     }
   }
 
@@ -170,77 +135,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
 
                 const SizedBox(height: 24),
-
-                // SECCION IDIOMA
-                _buildSectionHeader("Idioma"),
-                const SizedBox(height: 12),
-
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _colorVerdeBosque.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: _languages.map((lang) {
-                      final isSelected = _language == lang['code'];
-                      final isLast = _languages.last['code'] == lang['code'];
-
-                      return Column(
-                        children: [
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? _colorVerdeBosque
-                                    : _colorVerdeMenta.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.language_rounded,
-                                color: isSelected
-                                    ? Colors.white
-                                    : _colorVerdeBosque,
-                                size: 18,
-                              ),
-                            ),
-                            title: Text(
-                              lang['label']!,
-                              style: TextStyle(
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                fontSize: 15,
-                                color: const Color(0xFF0F1D19),
-                              ),
-                            ),
-                            trailing: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    color: _colorVerdeBosque,
-                                    size: 20,
-                                  )
-                                : null,
-                            onTap: () => _changeLanguage(lang['code']!),
-                          ),
-                          if (!isLast)
-                            const Divider(height: 1, indent: 16, endIndent: 16),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
 
                 const SizedBox(height: 12),
 
