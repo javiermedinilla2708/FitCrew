@@ -10,6 +10,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/screens/settings/preferences_screen.dart';
+import 'package:fitcrew/screens/settings/privacy_screen.dart';
+import 'package:fitcrew/screens/settings/security_screen.dart';
 import 'package:fitcrew/screens/welcome/welcome_screen.dart';
 import 'package:fitcrew/services/api_service.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
@@ -896,19 +899,48 @@ class ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.lock_person_outlined,
                 title: "Privacidad",
                 subtitle: "Perfil publico, bloqueos y visibilidad",
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  final navigator = Navigator.of(context);
+                  Navigator.pop(context);
+                  Future.delayed(
+                    const Duration(milliseconds: 200),
+                    () => navigator.push(
+                      MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+                    ),
+                  );
+                },
               ),
               _buildMenuOption(
                 icon: Icons.shield_outlined,
                 title: "Seguridad de la cuenta",
                 subtitle: "Cambiar contrasena y verificacion",
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  final navigator = Navigator.of(context);
+                  Navigator.pop(context);
+                  Future.delayed(
+                    const Duration(milliseconds: 200),
+                    () => navigator.push(
+                      MaterialPageRoute(builder: (_) => const SecurityScreen()),
+                    ),
+                  );
+                },
               ),
               _buildMenuOption(
                 icon: Icons.settings_suggest_outlined,
                 title: "Preferencias",
                 subtitle: "Unidades de medida y notificaciones",
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  final navigator = Navigator.of(context);
+                  Navigator.pop(context);
+                  Future.delayed(
+                    const Duration(milliseconds: 200),
+                    () => navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) => const PreferencesScreen(),
+                      ),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 10),

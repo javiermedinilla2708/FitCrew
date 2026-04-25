@@ -278,6 +278,7 @@ class _ActivityScreenState extends State<ActivityScreen>
             bottom: bottomOffset - 70,
             right: 16,
             child: FloatingActionButton(
+              heroTag: "fab_activities",
               backgroundColor: _colorVerdeBosque,
               foregroundColor: Colors.white,
               onPressed: () => _showCreateActivitySheet(context, vm),
@@ -290,6 +291,7 @@ class _ActivityScreenState extends State<ActivityScreen>
             top: MediaQuery.of(context).padding.top + 76,
             right: 16,
             child: FloatingActionButton.small(
+              heroTag: "fab_my_location",
               backgroundColor: Colors.white,
               foregroundColor: _colorVerdeBosque,
               elevation: 4,

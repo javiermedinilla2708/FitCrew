@@ -155,7 +155,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          "El cambio de idioma se aplicara la proxima vez que inicies sesion.",
+                          "Si desactivas las notificaciones dejaras de recibir toda clase de avisos de la aplicación",
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
