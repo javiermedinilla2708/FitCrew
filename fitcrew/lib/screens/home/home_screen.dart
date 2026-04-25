@@ -14,12 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/viewmodels/post_viewmodel.dart';
 
-// ============================================================
-// HomeScreen
-// Pantalla principal con feed social, navegación inferior
-// y acceso a actividades y perfil
-// ============================================================
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -47,9 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final GlobalKey<_StatsRowState> _statsKey = GlobalKey<_StatsRowState>();
-
   final GlobalKey<ProfileScreenState> _profileKey =
       GlobalKey<ProfileScreenState>();
+
   // ----------------------------------------------------------
   // CICLO DE VIDA
   // ----------------------------------------------------------
@@ -134,11 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 40,
               ),
             ),
-
             const SizedBox(height: 20),
-
             const Text(
-              "¿Eliminar actividad?",
+              "Eliminar actividad?",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _colorVerdeBosque,
@@ -146,11 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w900,
               ),
             ),
-
             const SizedBox(height: 12),
-
             Text(
-              "Esta acción borrará permanentemente tu registro. ¿Estás seguro?",
+              "Esta accion borrara permanentemente tu registro. Estas seguro?",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[600],
@@ -158,9 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 1.4,
               ),
             ),
-
             const SizedBox(height: 24),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -179,20 +167,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       .read<PostViewModel>()
                       .deletePost(postId);
                   if (success && mounted) {
-                    _showSnackBar("Actividad eliminada con éxito");
+                    _showSnackBar("Actividad eliminada con exito");
                     await Future.delayed(const Duration(seconds: 1));
                     if (mounted) _reloadStats();
                   }
                 },
                 child: const Text(
-                  "Sí, eliminar ahora",
+                  "Si, eliminar ahora",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ),
             ),
-
             const SizedBox(height: 10),
-
             SizedBox(
               width: double.infinity,
               child: TextButton(
@@ -235,27 +221,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // BUILD
+  // ✅ Scaffold envuelto en Stack para mostrar el tutorial
   // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      backgroundColor: _colorFondoFrio,
-      body: _isLoading
-          ? Center(
-              child: SizedBox(
-                width: 140,
-                child: LinearProgressIndicator(
-                  color: _colorVerdeBosque,
-                  minHeight: 3,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            )
-          : _selectedIndex == 0
-          ? _buildHomeFeed()
-          : _buildOtherScreens(),
-      bottomNavigationBar: _buildBottomNav(),
+    return Stack(
+      children: [
+        // HomeScreen normal
+        Scaffold(
+          extendBody: true,
+          backgroundColor: _colorFondoFrio,
+          body: _isLoading
+              ? Center(
+                  child: SizedBox(
+                    width: 140,
+                    child: LinearProgressIndicator(
+                      color: _colorVerdeBosque,
+                      minHeight: 3,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                )
+              : _selectedIndex == 0
+              ? _buildHomeFeed()
+              : _buildOtherScreens(),
+          bottomNavigationBar: _buildBottomNav(),
+        ),
+
+        // ✅ Tutorial encima de todo si aplica
+      ],
     );
   }
 
@@ -301,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const SliverFillRemaining(
-                child: Center(child: Text("No hay actividades aún")),
+                child: Center(child: Text("No hay actividades aun")),
               );
             }
 
@@ -366,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           Row(
             children: [
-              // Botón buscar personas con badge
+              // Boton buscar personas con badge
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('follow_requests')
@@ -427,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(width: 8),
 
-              // Botón notificaciones con badge
+              // Boton notificaciones con badge
               StreamBuilder<int>(
                 stream: NotificationService().getUnreadCountStream(),
                 builder: (context, snapshot) {
@@ -523,6 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
               vertical: 5,
             ),
             leading: GestureDetector(
+              // ✅ Navega al perfil del usuario al pulsar el avatar
               onTap: () {
                 if (postOwnerId.isNotEmpty) {
                   Navigator.push(
@@ -535,6 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               child: CircleAvatar(
+                // ✅ Key para forzar reconstrucción al cambiar foto
                 key: ValueKey(profilePic ?? userName),
                 backgroundColor: _colorVerdeMenta,
                 backgroundImage: profilePic != null && profilePic.isNotEmpty
@@ -1001,7 +997,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: TextField(
                             controller: commentController,
                             decoration: InputDecoration(
-                              hintText: "Añadir comentario...",
+                              hintText: "Anadir comentario...",
                               filled: true,
                               fillColor: _colorFondoFrio,
                               border: OutlineInputBorder(
@@ -1047,9 +1043,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ============================================================
 // WIDGET: _StatsRow
-// Widget independiente con su propio estado para que al
-// recargar las stats solo se reconstruya este widget y no
-// toda la HomeScreen ni el feed de posts
 // ============================================================
 class _StatsRow extends StatefulWidget {
   final String uid;
@@ -1083,7 +1076,6 @@ class _StatsRowState extends State<_StatsRow> {
     }
   }
 
-  //Método público llamado desde HomeScreen via GlobalKey
   Future<void> reload() async {
     if (!mounted) return;
     setState(() => _loadingStats = true);

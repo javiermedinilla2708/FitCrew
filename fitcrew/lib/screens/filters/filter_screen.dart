@@ -1,7 +1,7 @@
+import 'package:fitcrew/screens/tutorial/tutorial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/viewmodels/filter_viewmodel.dart';
-import 'package:fitcrew/screens/home/home_screen.dart';
 
 // ============================================================
 // FilterScreen
@@ -163,7 +163,7 @@ class FilterScreen extends StatelessWidget {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const HomeScreen(),
+                        builder: (context) => const TutorialScreen(),
                       ),
                       (route) => false,
                     );
