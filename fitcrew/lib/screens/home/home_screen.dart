@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addComment(String postId, String commentText) async {
     if (_user == null) return;
     try {
-      // Cargar la foto de perfil actual del usuario
+      // Cargar foto de perfil actual del usuario
       String? profilePicB64;
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -122,6 +122,23 @@ class _HomeScreenState extends State<HomeScreen> {
             'profilePic': profilePicB64,
             'timestamp': FieldValue.serverTimestamp(),
           });
+
+      final postDoc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .get();
+      final postOwnerUid = postDoc.data()?['userId'] as String? ?? '';
+
+      if (postOwnerUid.isNotEmpty) {
+        await NotificationService().notifyPostComment(
+          postOwnerUid: postOwnerUid,
+          commenterName: _currentUserName,
+          postId: postId,
+          commentText: commentText.length > 30
+              ? '${commentText.substring(0, 30)}...'
+              : commentText,
+        );
+      }
     } catch (e) {
       debugPrint("Error al comentar: $e");
     }
@@ -1408,6 +1425,7 @@ class LikeButton extends StatelessWidget {
 
   Future<void> _toggleLike(String postId, String? userId, bool isLiked) async {
     if (userId == null) return;
+
     final docRef = FirebaseFirestore.instance
         .collection('posts')
         .doc(postId)
@@ -1418,6 +1436,26 @@ class LikeButton extends StatelessWidget {
       await docRef.delete();
     } else {
       await docRef.set({'timestamp': FieldValue.serverTimestamp()});
+
+      try {
+        final postDoc = await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId)
+            .get();
+        final postOwnerUid = postDoc.data()?['userId'] as String? ?? '';
+        final userName =
+            FirebaseAuth.instance.currentUser?.displayName ?? 'Usuario';
+
+        if (postOwnerUid.isNotEmpty) {
+          await NotificationService().notifyPostLiked(
+            postOwnerUid: postOwnerUid,
+            likerName: userName,
+            postId: postId,
+          );
+        }
+      } catch (e) {
+        // No bloqueamos el flujo del like
+      }
     }
   }
 }

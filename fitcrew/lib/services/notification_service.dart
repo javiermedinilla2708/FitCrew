@@ -208,6 +208,82 @@ class NotificationService {
   }
 
   // ----------------------------------------------------------
+  // NOTIFICAR — alguien ha dado like a tu post
+  // Guarda en Firestore + envia push al autor del post
+  // No notifica si el like es del propio autor
+  // ----------------------------------------------------------
+  Future<void> notifyPostLiked({
+    required String postOwnerUid,
+    required String likerName,
+    required String postId,
+  }) async {
+    if (_currentUid == null) return;
+    if (_currentUid == postOwnerUid) return;
+
+    // Evitar notificaciones duplicadas si ya dio like antes
+    try {
+      final existing = await _db
+          .collection('notifications')
+          .where('toUid', isEqualTo: postOwnerUid)
+          .where('fromUid', isEqualTo: _currentUid)
+          .where('type', isEqualTo: NotificationType.postLiked)
+          .where('activityId', isEqualTo: postId)
+          .get();
+
+      if (existing.docs.isNotEmpty) return;
+
+      await _createNotification(
+        toUid: postOwnerUid,
+        fromUid: _currentUid,
+        fromName: likerName,
+        type: NotificationType.postLiked,
+        title: "Nuevo me gusta",
+        body: "$likerName ha dado me gusta a tu publicacion",
+        activityId: postId,
+      );
+
+      await _sendPush(
+        toUid: postOwnerUid,
+        title: "Nuevo me gusta",
+        body: "$likerName ha dado me gusta a tu publicacion",
+      );
+    } catch (e) {
+      // No bloqueamos el flujo principal
+    }
+  }
+
+  // ----------------------------------------------------------
+  // NOTIFICAR — alguien ha comentado en tu post
+  // Guarda en Firestore + envia push al autor del post
+  // No notifica si el comentario es del propio autor
+  // ----------------------------------------------------------
+  Future<void> notifyPostComment({
+    required String postOwnerUid,
+    required String commenterName,
+    required String postId,
+    required String commentText,
+  }) async {
+    if (_currentUid == null) return;
+    if (_currentUid == postOwnerUid) return;
+
+    await _createNotification(
+      toUid: postOwnerUid,
+      fromUid: _currentUid,
+      fromName: commenterName,
+      type: NotificationType.postComment,
+      title: "Nuevo comentario",
+      body: "$commenterName ha comentado: \"$commentText\"",
+      activityId: postId,
+    );
+
+    await _sendPush(
+      toUid: postOwnerUid,
+      title: "Nuevo comentario",
+      body: "$commenterName ha comentado: \"$commentText\"",
+    );
+  }
+
+  // ----------------------------------------------------------
   // STREAM — notificaciones en tiempo real
   // ----------------------------------------------------------
   Stream<List<AppNotification>> getNotificationsStream() {

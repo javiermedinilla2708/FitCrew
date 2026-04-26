@@ -53,14 +53,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.sports_rounded;
       case NotificationType.newActivity:
         return Icons.add_location_alt_outlined;
+      case NotificationType.postLiked:
+        return Icons.favorite_rounded;
+      case NotificationType.postComment:
+        return Icons.chat_bubble_outline_rounded;
       default:
         return Icons.notifications_outlined;
     }
   }
 
-  // ----------------------------------------------------------
-  // COLOR SEGÚN TIPO DE NOTIFICACIÓN
-  // ----------------------------------------------------------
   Color _getColor(String type) {
     switch (type) {
       case NotificationType.followRequest:
@@ -71,6 +72,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return const Color(0xFFFF9800);
       case NotificationType.newActivity:
         return _colorVerdeBosque;
+      case NotificationType.postLiked:
+        return const Color(0xFFE91E63);
+      case NotificationType.postComment:
+        return const Color(0xFF9C27B0);
       default:
         return Colors.grey;
     }
