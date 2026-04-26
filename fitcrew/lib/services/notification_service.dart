@@ -257,6 +257,7 @@ class NotificationService {
   // Guarda en Firestore + envia push al autor del post
   // No notifica si el comentario es del propio autor
   // ----------------------------------------------------------
+  // ----------------------------------------------------------
   Future<void> notifyPostComment({
     required String postOwnerUid,
     required String commenterName,
@@ -266,21 +267,40 @@ class NotificationService {
     if (_currentUid == null) return;
     if (_currentUid == postOwnerUid) return;
 
-    await _createNotification(
-      toUid: postOwnerUid,
-      fromUid: _currentUid,
-      fromName: commenterName,
-      type: NotificationType.postComment,
-      title: "Nuevo comentario",
-      body: "$commenterName ha comentado: \"$commentText\"",
-      activityId: postId,
-    );
+    try {
+      final fiveMinutesAgo = Timestamp.fromDate(
+        DateTime.now().subtract(const Duration(minutes: 5)),
+      );
 
-    await _sendPush(
-      toUid: postOwnerUid,
-      title: "Nuevo comentario",
-      body: "$commenterName ha comentado: \"$commentText\"",
-    );
+      final existing = await _db
+          .collection('notifications')
+          .where('toUid', isEqualTo: postOwnerUid)
+          .where('fromUid', isEqualTo: _currentUid)
+          .where('type', isEqualTo: NotificationType.postComment)
+          .where('activityId', isEqualTo: postId)
+          .where('timestamp', isGreaterThan: fiveMinutesAgo)
+          .get();
+
+      if (existing.docs.isNotEmpty) return;
+
+      await _createNotification(
+        toUid: postOwnerUid,
+        fromUid: _currentUid,
+        fromName: commenterName,
+        type: NotificationType.postComment,
+        title: "Nuevo comentario",
+        body: "$commenterName ha comentado: \"$commentText\"",
+        activityId: postId,
+      );
+
+      await _sendPush(
+        toUid: postOwnerUid,
+        title: "Nuevo comentario",
+        body: "$commenterName ha comentado: \"$commentText\"",
+      );
+    } catch (e) {
+      // No bloqueamos el flujo principal
+    }
   }
 
   // ----------------------------------------------------------
