@@ -1,3 +1,4 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:fitcrew/screens/tutorial/tutorial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -160,35 +161,21 @@ class FilterScreen extends StatelessWidget {
               ? () async {
                   final success = await vm.saveUserSports();
                   if (success && context.mounted) {
-                    // Informar al usuario que revise su correo
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(
-                              Icons.mark_email_unread_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "Te hemos enviado un correo de verificacion. Revisalo cuando puedas.",
-                                style: TextStyle(fontSize: 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: const Color(0xFF234D41),
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                    await Flushbar(
+                      message:
+                          "Te hemos enviado un correo de verificacion. Revisalo cuando puedas.",
+                      icon: const Icon(
+                        Icons.mark_email_unread_rounded,
+                        color: Colors.white,
+                        size: 20,
                       ),
-                    );
-
-                    await Future.delayed(const Duration(seconds: 1));
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: const Color(0xFF234D41),
+                      borderRadius: BorderRadius.circular(14),
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      flushbarPosition: FlushbarPosition.TOP,
+                    ).show(context);
 
                     if (context.mounted) {
                       Navigator.pushAndRemoveUntil(

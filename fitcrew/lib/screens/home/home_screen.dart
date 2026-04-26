@@ -5,6 +5,7 @@
 // ============================================================
 
 import 'dart:convert';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/screens/activities/activities_screen.dart';
@@ -216,22 +217,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ----------------------------------------------------------
-  // SNACKBAR
+  // FLUSHBAR
+  // Muestra una notificacion flotante en la parte inferior
+  // de la pantalla justo por encima de la barra de navegacion
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+    Flushbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          fontSize: 14,
         ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: _colorVerdeBosque,
-        margin: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
-    );
+      duration: const Duration(seconds: 3),
+      backgroundColor: _colorVerdeBosque,
+      borderRadius: BorderRadius.circular(15),
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      flushbarPosition: FlushbarPosition.BOTTOM,
+      icon: const Icon(
+        Icons.check_circle_outline_rounded,
+        color: Colors.white,
+        size: 22,
+      ),
+    ).show(context);
   }
 
   // ----------------------------------------------------------
