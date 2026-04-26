@@ -160,13 +160,45 @@ class FilterScreen extends StatelessWidget {
               ? () async {
                   final success = await vm.saveUserSports();
                   if (success && context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TutorialScreen(),
+                    // Informar al usuario que revise su correo
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(
+                              Icons.mark_email_unread_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Te hemos enviado un correo de verificacion. Revisalo cuando puedas.",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF234D41),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      (route) => false,
                     );
+
+                    await Future.delayed(const Duration(seconds: 1));
+
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TutorialScreen(),
+                        ),
+                        (route) => false,
+                      );
+                    }
                   }
                 }
               : null,

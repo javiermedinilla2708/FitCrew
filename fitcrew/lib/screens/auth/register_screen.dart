@@ -1,13 +1,15 @@
+// ============================================================
+// lib/screens/auth/register_screen.dart
+// Pantalla de registro con validacion de campos y navegacion
+// al selector de deportes favoritos tras el registro.
+// Soporta registro con email y contrasena y con Google.
+// ============================================================
+
+import 'package:fitcrew/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/screens/filters/filter_screen.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
-
-// ============================================================
-// RegisterScreen
-// Pantalla de registro con validación de campos y navegación
-// al selector de deportes favoritos
-// ============================================================
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -49,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // VALIDACIÓN
+  // VALIDACION DE EMAIL
   // ----------------------------------------------------------
   bool _isEmailValid(String email) {
     return RegExp(
@@ -58,7 +60,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // LÓGICA DE REGISTRO
+  // LOGICA DE REGISTRO CON EMAIL Y CONTRASENA
+  // Valida todos los campos antes de llamar al ViewModel.
+  // Navega a FilterScreen para el onboarding de deportes.
   // ----------------------------------------------------------
   Future<void> _handleRegister() async {
     final authVM = context.read<AuthViewModel>();
@@ -73,17 +77,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (!_isEmailValid(email)) {
-      _showSnackBar("Introduce un email válido");
+      _showSnackBar("Introduce un email valido");
       return;
     }
 
     if (password.length < 6) {
-      _showSnackBar("La contraseña debe tener al menos 6 caracteres");
+      _showSnackBar("La contrasena debe tener al menos 6 caracteres");
       return;
     }
 
     if (password != confirmPassword) {
-      _showSnackBar("Las contraseñas no coinciden");
+      _showSnackBar("Las contrasenas no coinciden");
       return;
     }
 
@@ -103,6 +107,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
+  // LOGICA DE LOGIN CON GOOGLE
+  // Si el usuario es nuevo lo lleva a FilterScreen para
+  // seleccionar deportes y pasar por el tutorial.
+  // Si ya tiene cuenta lo lleva directamente a HomeScreen.
+  // ----------------------------------------------------------
+  Future<void> _handleGoogleLogin() async {
+    final authVM = context.read<AuthViewModel>();
+    final result = await authVM.loginWithGoogle();
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      if (result['isNewUser'] == true) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const FilterScreen()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } else {
+      final error = authVM.errorMessage ?? "Error al iniciar sesion con Google";
+      if (error != "Inicio de sesion cancelado") {
+        _showSnackBar(error);
+      }
+    }
+  }
+
+  // ----------------------------------------------------------
   // SNACKBAR
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
@@ -111,6 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: _colorVerdeBosque,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -137,17 +176,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const SizedBox(height: 20),
 
-                // --- Botón volver ---
+                // Boton volver a la pantalla anterior
                 _buildBackButton(context),
 
                 const SizedBox(height: 30),
 
-                // --- Títulos ---
+                // Cabecera con titulo y descripcion
                 _buildHeader(),
 
                 const SizedBox(height: 40),
 
-                // --- Campo nombre ---
+                // Campo de nombre de usuario
                 _buildInputLabel("Nombre de usuario"),
                 _buildCustomTextField(
                   controller: _nameController,
@@ -158,7 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
-                // --- Campo email ---
+                // Campo de email
                 _buildInputLabel("Email"),
                 _buildCustomTextField(
                   controller: _emailController,
@@ -170,11 +209,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
-                // --- Campo contraseña ---
-                _buildInputLabel("Contraseña"),
+                // Campo de contrasena con toggle de visibilidad
+                _buildInputLabel("Contrasena"),
                 _buildCustomTextField(
                   controller: _passwordController,
-                  hint: "Crea tu contraseña",
+                  hint: "Crea tu contrasena",
                   icon: Icons.lock_outline_rounded,
                   obscureText: !_isPasswordVisible,
                   enabled: !isLoading,
@@ -185,7 +224,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : Icons.visibility_off,
                       color: Colors.grey,
                     ),
-
                     onPressed: () => setState(
                       () => _isPasswordVisible = !_isPasswordVisible,
                     ),
@@ -194,11 +232,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
-                // --- Campo confirmar contraseña ---
-                _buildInputLabel("Confirmar contraseña"),
+                // Campo de confirmacion de contrasena
+                _buildInputLabel("Confirmar contrasena"),
                 _buildCustomTextField(
                   controller: _confirmPasswordController,
-                  hint: "Repetir contraseña",
+                  hint: "Repetir contrasena",
                   icon: Icons.lock_outline_rounded,
                   obscureText: !_isConfirmPasswordVisible,
                   action: TextInputAction.done,
@@ -210,7 +248,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : Icons.visibility_off,
                       color: Colors.grey,
                     ),
-
                     onPressed: () => setState(
                       () => _isConfirmPasswordVisible =
                           !_isConfirmPasswordVisible,
@@ -220,8 +257,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 40),
 
-                // --- Botón continuar ---
+                // Boton principal de registro
                 _buildRegisterButton(isLoading),
+
+                const SizedBox(height: 30),
+
+                // Divisor visual entre registro y opciones sociales
+                _buildDivider(),
+
+                const SizedBox(height: 30),
+
+                // Boton de registro con Google
+                Center(child: _buildSocialButton()),
 
                 const SizedBox(height: 30),
               ],
@@ -233,14 +280,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Cabecera
+  // SEGMENTO: CABECERA
   // ----------------------------------------------------------
   Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Únete a",
+          "Unete a",
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w500,
@@ -265,6 +312,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: BOTON VOLVER
+  // ----------------------------------------------------------
   Widget _buildBackButton(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.pop(context),
@@ -284,7 +334,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Formulario
+  // SEGMENTO: LABEL DE CAMPO
   // ----------------------------------------------------------
   Widget _buildInputLabel(String label) {
     return Padding(
@@ -300,6 +350,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: CAMPO DE TEXTO PERSONALIZADO
+  // Soporta texto normal, contrasena, teclado numerico y
+  // accion de teclado configurable para el flujo del formulario
+  // ----------------------------------------------------------
   Widget _buildCustomTextField({
     required TextEditingController controller,
     required String hint,
@@ -345,7 +400,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Botón de registro
+  // SEGMENTO: BOTON DE REGISTRO
+  // Muestra un indicador de carga mientras se procesa el registro
   // ----------------------------------------------------------
   Widget _buildRegisterButton(bool isLoading) {
     return SizedBox(
@@ -355,6 +411,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onPressed: isLoading ? null : _handleRegister,
         style: ElevatedButton.styleFrom(
           backgroundColor: _colorVerdeBosque,
+          disabledBackgroundColor: Colors.grey[200],
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -374,6 +431,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 "Continuar",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // SEGMENTO: DIVISOR VISUAL
+  // Separa el registro con email del registro con Google
+  // ----------------------------------------------------------
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey[200], thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Text(
+            "O CONTINUA CON",
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey[200], thickness: 1)),
+      ],
+    );
+  }
+
+  // ----------------------------------------------------------
+  // SEGMENTO: BOTON DE GOOGLE
+  // Muestra el logo de Googles y el texto
+  // de accion. Llama a _handleGoogleLogin al pulsarlo.
+  // ----------------------------------------------------------
+  Widget _buildSocialButton() {
+    final isLoading = context.read<AuthViewModel>().isLoading;
+
+    return GestureDetector(
+      onTap: isLoading ? null : _handleGoogleLogin,
+      child: AnimatedOpacity(
+        opacity: isLoading ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo oficial de Google como asset
+              Image.asset(
+                'assets/images/google_logo.png',
+                width: 26,
+                height: 26,
+              ),
+              const SizedBox(width: 14),
+              const Text(
+                "Continuar con Google",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F1D19),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

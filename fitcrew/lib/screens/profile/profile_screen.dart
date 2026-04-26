@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/main.dart';
 import 'package:fitcrew/screens/settings/preferences_screen.dart';
 import 'package:fitcrew/screens/settings/privacy_screen.dart';
 import 'package:fitcrew/screens/settings/security_screen.dart';
@@ -1551,7 +1552,6 @@ class ProfileScreenState extends State<ProfileScreen> {
   // ELIMINAR CUENTA
   // ----------------------------------------------------------
   void _handleDeleteAccount(BuildContext context) {
-    final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
 
@@ -1596,13 +1596,13 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
+
               final success = await authVM.deleteAccount();
+
               if (success) {
                 await Future.delayed(const Duration(milliseconds: 300));
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => const WelcomeScreen(),
-                  ),
+                navigatorKey.currentState?.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
                   (route) => false,
                 );
               } else {

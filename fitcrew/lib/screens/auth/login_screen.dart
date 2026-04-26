@@ -1,13 +1,17 @@
+// ============================================================
+// lib/screens/auth/login_screen.dart
+// Pantalla de inicio de sesion con validacion de campos,
+// feedback visual y acceso a recuperacion de contraseña.
+// Soporta login con email y contraseña y con Google.
+// ============================================================
+
+import 'package:fitcrew/screens/auth/forgot_password_screen.dart';
+import 'package:fitcrew/screens/filters/filter_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/screens/home/home_screen.dart';
 import 'package:fitcrew/screens/auth/register_screen.dart';
 import 'package:fitcrew/viewmodels/auth_viewmodel.dart';
-
-// ============================================================
-// LoginScreen
-// Pantalla de inicio de sesión con validación y feedback visual
-// ============================================================
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // VALIDACIÓN
+  // VALIDACION DE EMAIL
   // ----------------------------------------------------------
   bool _isEmailValid(String email) {
     return RegExp(
@@ -51,7 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // LÓGICA DE LOGIN
+  // LOGICA DE LOGIN CON EMAIL Y CONTRASENA
+  // Valida los campos antes de llamar al ViewModel.
+  // Navega a HomeScreen si el login es exitoso.
   // ----------------------------------------------------------
   Future<void> _handleLogin() async {
     final authVM = context.read<AuthViewModel>();
@@ -64,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (!_isEmailValid(email)) {
-      _showSnackBar("Introduce un email válido");
+      _showSnackBar("Introduce un email valido");
       return;
     }
 
@@ -73,14 +79,47 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Navegación
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
         (route) => false,
       );
     } else {
-      _showSnackBar(authVM.errorMessage ?? "Error al iniciar sesión");
+      _showSnackBar(authVM.errorMessage ?? "Error al iniciar sesion");
+    }
+  }
+
+  // ----------------------------------------------------------
+  // LOGICA DE LOGIN CON GOOGLE
+  // Si el usuario es nuevo lo lleva a FilterScreen para
+  // seleccionar deportes y pasar por el tutorial.
+  // Si ya tiene cuenta lo lleva directamente a HomeScreen.
+  // ----------------------------------------------------------
+  Future<void> _handleGoogleLogin() async {
+    final authVM = context.read<AuthViewModel>();
+    final result = await authVM.loginWithGoogle();
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      if (result['isNewUser'] == true) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const FilterScreen()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } else {
+      final error = authVM.errorMessage ?? "Error al iniciar sesion con Google";
+      if (error != "Inicio de sesion cancelado") {
+        _showSnackBar(error);
+      }
     }
   }
 
@@ -93,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: _colorVerdeBosque,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -119,17 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 20),
 
-                // --- Botón volver ---
+                // Boton volver a la pantalla anterior
                 _buildBackButton(context),
 
                 const SizedBox(height: 30),
 
-                // --- Títulos ---
+                // Cabecera con titulo y descripcion
                 _buildHeader(),
 
                 const SizedBox(height: 40),
 
-                // --- Campo email ---
+                // Campo de email
                 _buildInputLabel("Email"),
                 _buildCustomTextField(
                   controller: _emailController,
@@ -140,11 +180,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 25),
 
-                // --- Campo contraseña ---
-                _buildInputLabel("Contraseña"),
+                // Campo de contrasena con toggle de visibilidad
+                _buildInputLabel("Contrasena"),
                 _buildCustomTextField(
                   controller: _passwordController,
-                  hint: "••••••••••••",
+                  hint: "................",
                   icon: Icons.lock_outline_rounded,
                   obscureText: !_isPasswordVisible,
                   enabled: !isLoading,
@@ -161,13 +201,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // --- ¿Olvidaste contraseña? ---
+                // Enlace a recuperacion de contrasena
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: isLoading ? null : () {},
-                    child: Text(
-                      "¿Olvidaste tu contraseña?",
+                    onPressed: isLoading
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          ),
+                    child: const Text(
+                      "¿Olvidaste tu contrasena?",
                       style: TextStyle(
                         color: _colorVerdeBosque,
                         fontWeight: FontWeight.bold,
@@ -178,22 +225,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 30),
 
-                // --- Botón login ---
+                // Boton principal de login
                 _buildLoginButton(isLoading),
 
                 const SizedBox(height: 40),
 
-                // --- Divisor ---
+                // Divisor visual entre login y opciones sociales
                 _buildDivider(),
 
                 const SizedBox(height: 30),
 
-                // --- Botón Google (deshabilitado hasta implementación) ---
-                Center(child: _buildSocialButton(Icons.g_mobiledata)),
+                // Boton de inicio de sesion con Google
+                Center(child: _buildSocialButton()),
 
                 const SizedBox(height: 40),
 
-                // --- Footer: ir a registro ---
+                // Enlace a la pantalla de registro
                 _buildFooter(context, isLoading),
               ],
             ),
@@ -204,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Cabecera
+  // SEGMENTO: CABECERA
   // ----------------------------------------------------------
   Widget _buildHeader() {
     return Column(
@@ -229,13 +276,16 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          "Inicia sesión para continuar tu viaje y conectar con la comunidad.",
+          "Inicia sesion para continuar tu viaje y conectar con la comunidad.",
           style: TextStyle(color: Colors.black54, fontSize: 16, height: 1.4),
         ),
       ],
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: BOTON VOLVER
+  // ----------------------------------------------------------
   Widget _buildBackButton(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.pop(context),
@@ -255,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Formulario
+  // SEGMENTO: LABEL DE CAMPO
   // ----------------------------------------------------------
   Widget _buildInputLabel(String label) {
     return Padding(
@@ -271,6 +321,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: CAMPO DE TEXTO PERSONALIZADO
+  // Soporta texto normal, contrasena y teclado numerico.
+  // El suffixIcon se usa para el toggle de visibilidad.
+  // ----------------------------------------------------------
   Widget _buildCustomTextField({
     required TextEditingController controller,
     required String hint,
@@ -312,7 +367,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // WIDGETS PRIVADOS — Botones
+  // SEGMENTO: BOTON DE LOGIN
+  // Muestra un indicador de carga mientras se procesa el login
   // ----------------------------------------------------------
   Widget _buildLoginButton(bool isLoading) {
     return SizedBox(
@@ -338,13 +394,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               )
             : const Text(
-                "Iniciar sesión",
+                "Iniciar sesion",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
       ),
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: DIVISOR VISUAL
+  // Separa el login con email del login con Google
+  // ----------------------------------------------------------
   Widget _buildDivider() {
     return Row(
       children: [
@@ -352,7 +412,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: Text(
-            "O CONTINÚA CON",
+            "O CONTINUA CON",
             style: TextStyle(
               color: Colors.grey[400],
               fontSize: 11,
@@ -366,29 +426,62 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Deshabilitado visualmente hasta implementar Google Sign-In
-  Widget _buildSocialButton(IconData icon) {
-    return Opacity(
-      opacity: 0.4,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade100),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
+  // ----------------------------------------------------------
+  // SEGMENTO: BOTON DE GOOGLE
+  // Muestra el logo de Google y el texto
+  // de accion. Llama a _handleGoogleLogin al pulsarlo.
+  // ----------------------------------------------------------
+  Widget _buildSocialButton() {
+    final isLoading = context.read<AuthViewModel>().isLoading;
+
+    return GestureDetector(
+      onTap: isLoading ? null : _handleGoogleLogin,
+      child: AnimatedOpacity(
+        opacity: isLoading ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo oficial de Google como asset
+              Image.asset(
+                'assets/images/google_logo.png',
+                width: 26,
+                height: 26,
+              ),
+              const SizedBox(width: 14),
+              const Text(
+                "Continuar con Google",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F1D19),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Icon(icon, size: 35, color: _colorVerdeBosque),
       ),
     );
   }
 
+  // ----------------------------------------------------------
+  // SEGMENTO: FOOTER
+  // Enlace a la pantalla de registro para nuevos usuarios
+  // ----------------------------------------------------------
   Widget _buildFooter(BuildContext context, bool isLoading) {
     return Center(
       child: GestureDetector(
@@ -404,7 +497,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: TextStyle(color: Colors.grey[600], fontSize: 16),
             children: const [
               TextSpan(
-                text: "Regístrate",
+                text: "Registrate",
                 style: TextStyle(
                   color: _colorVerdeBosque,
                   fontWeight: FontWeight.bold,

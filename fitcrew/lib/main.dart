@@ -10,6 +10,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
+// ----------------------------------------------------------
+// CLAVE GLOBAL DEL NAVIGATOR RAIZ
+// Permite navegar desde cualquier punto de la app sin
+// depender del contexto local que puede estar destruido.
+// Se usa principalmente en deleteAccount para navegar a
+// WelcomeScreen tras eliminar la cuenta de Firebase Auth.
+// ----------------------------------------------------------
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -36,6 +45,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'FitCrew',
       theme: ThemeData(

@@ -72,6 +72,25 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------
+  // LOGIN CON GOOGLE
+  // Devuelve true si el login fue exitoso.
+  // isNewUser indica si debe ir a FilterScreen o a HomeScreen.
+  // ----------------------------------------------------------
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final result = await _authService.loginWithGoogle();
+      return {'success': true, 'isNewUser': result['isNewUser']};
+    } catch (e) {
+      _errorMessage = e.toString();
+      return {'success': false, 'isNewUser': false};
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ----------------------------------------------------------
   // CIERRE DE SESIÓN
   // Tras cerrar sesión notifica a los listeners para que la UI
   // reaccione y redirija al usuario a la pantalla de bienvenida.

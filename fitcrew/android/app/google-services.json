@@ -12,7 +12,20 @@
           "package_name": "com.example.fitcrew"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "873691250785-h56r5j4q1su9ovs9ljk9bg2sp0a0k1fr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fitcrew",
+            "certificate_hash": "641b8cfd9962b6080b760252ab3a3baffa63339b"
+          }
+        },
+        {
+          "client_id": "873691250785-l8fjfneer09sqg974q90915tpqgtfndt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCs6SFCcye5Ib-l8Tx_BmxL84MlvJ6YQ-c"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "873691250785-l8fjfneer09sqg974q90915tpqgtfndt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "873691250785-c45emfcka5b4tt78se7d87nrdmr9rtg8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitcrew"
+              }
+            }
+          ]
         }
       }
     }
