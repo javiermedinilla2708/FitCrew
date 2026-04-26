@@ -103,6 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addComment(String postId, String commentText) async {
     if (_user == null) return;
     try {
+      // Cargar la foto de perfil actual del usuario
+      String? profilePicB64;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user.uid)
+          .get();
+      profilePicB64 = userDoc.data()?['profilePic'];
+
       await FirebaseFirestore.instance
           .collection('posts')
           .doc(postId)
@@ -111,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'userId': _user.uid,
             'userName': _currentUserName,
             'comment': commentText,
+            'profilePic': profilePicB64,
             'timestamp': FieldValue.serverTimestamp(),
           });
     } catch (e) {
@@ -964,6 +973,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return Column(
                 children: [
+                  // Handle del modal
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 15),
                     height: 5,
@@ -974,6 +984,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
+                  // Cabecera con contador de comentarios
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -996,11 +1007,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const Divider(),
 
+                  // Lista de comentarios con foto de perfil
+                  // y boton de eliminar para el autor
                   Expanded(
                     child: !snapshot.hasData
                         ? const Center(
                             child: CircularProgressIndicator(
                               color: _colorVerdeBosque,
+                            ),
+                          )
+                        : total == 0
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 48,
+                                  color: Colors.grey[300],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "Sin comentarios aun",
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(
@@ -1010,28 +1044,125 @@ class _HomeScreenState extends State<HomeScreen> {
                               final data =
                                   snapshot.data!.docs[index].data()
                                       as Map<String, dynamic>;
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: _colorVerdeMenta,
-                                  child: const Icon(
-                                    Icons.person,
-                                    size: 20,
-                                    color: _colorVerdeBosque,
-                                  ),
+                              final String? commentPic = data['profilePic'];
+                              final String commentUser =
+                                  data['userName'] ?? 'Usuario';
+                              final String commentUid = data['userId'] ?? '';
+                              final String commentId =
+                                  snapshot.data!.docs[index].id;
+                              final bool isMyComment = commentUid == _user?.uid;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
                                 ),
-                                title: Text(
-                                  data['userName'] ?? 'Usuario',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Avatar con navegacion al perfil del autor
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (commentUid.isNotEmpty) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => UserProfileScreen(
+                                                uid: commentUid,
+                                                name: commentUser,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: _colorVerdeMenta,
+                                        // Muestra foto en Base64 si existe
+                                        // o inicial del nombre si no
+                                        backgroundImage:
+                                            commentPic != null &&
+                                                commentPic.isNotEmpty
+                                            ? MemoryImage(
+                                                base64Decode(commentPic),
+                                              )
+                                            : null,
+                                        child:
+                                            commentPic == null ||
+                                                commentPic.isEmpty
+                                            ? Text(
+                                                commentUser[0].toUpperCase(),
+                                                style: const TextStyle(
+                                                  color: _colorVerdeBosque,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 12),
+
+                                    // Nombre del autor y texto del comentario
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            commentUser,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: _colorVerdeBosque,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            data['comment'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Boton eliminar — solo visible para el autor
+                                    if (isMyComment)
+                                      GestureDetector(
+                                        onTap: () async {
+                                          await FirebaseFirestore.instance
+                                              .collection('posts')
+                                              .doc(postId)
+                                              .collection('comments')
+                                              .doc(commentId)
+                                              .delete();
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.delete_outline_rounded,
+                                            size: 16,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                subtitle: Text(data['comment'] ?? ''),
                               );
                             },
                           ),
                   ),
 
+                  // Campo de texto para añadir comentario
                   Padding(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(context).viewInsets.bottom + 20,
