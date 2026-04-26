@@ -33,6 +33,14 @@ class _TutorialScreenState extends State<TutorialScreen>
 
   // ----------------------------------------------------------
   // PASOS DEL TUTORIAL
+  // 7 pasos — uno por funcionalidad principal de la app:
+  //   0 - Bienvenida
+  //   1 - Feed social
+  //   2 - Crear post
+  //   3 - Ranking
+  //   4 - Mapa de actividades
+  //   5 - Buscar companeros
+  //   6 - Perfil propio
   // ----------------------------------------------------------
   final List<_TutorialPage> _pages = const [
     _TutorialPage(
@@ -46,7 +54,7 @@ class _TutorialScreenState extends State<TutorialScreen>
       icon: Icons.dynamic_feed_rounded,
       title: "Feed social",
       description:
-          "Aqui veras los logros deportivos de la comunidad. Puedes dar like y dejar comentarios para motivar a otros usuarios. Pulsa el avatar de cualquier usuario para ver su perfil.",
+          "Aqui veras los logros deportivos de la comunidad. Puedes dar like y dejar comentarios para motivar a otros usuarios.",
       color: Color(0xFF2E6B5A),
     ),
     _TutorialPage(
@@ -57,25 +65,32 @@ class _TutorialScreenState extends State<TutorialScreen>
       color: Color(0xFF1A5C4A),
     ),
     _TutorialPage(
+      icon: Icons.emoji_events_rounded,
+      title: "Ranking de la comunidad",
+      description:
+          "Consulta el ranking global de usuarios mas activos y filtra por deporte para ver quien lidera en tu disciplina favorita. Compite y escala posiciones entrenando.",
+      color: Color(0xFF234D41),
+    ),
+    _TutorialPage(
       icon: Icons.map_rounded,
       title: "Actividades en el mapa",
       description:
           "Descubre actividades deportivas cerca de ti en el mapa interactivo. Puedes unirte a las que te interesen o crear las tuyas propias con un formulario rapido.",
-      color: Color(0xFF234D41),
+      color: Color(0xFF2E6B5A),
     ),
     _TutorialPage(
       icon: Icons.people_rounded,
       title: "Encuentra companeros",
       description:
           "Busca usuarios con tus mismos deportes favoritos y sigueles para construir tu red deportiva. Acepta sus solicitudes desde la pestana de Solicitudes.",
-      color: Color(0xFF2E6B5A),
+      color: Color(0xFF1A5C4A),
     ),
     _TutorialPage(
       icon: Icons.person_rounded,
       title: "Tu perfil",
       description:
           "Consulta tus estadisticas, entrenos y logros publicados. Edita tu nombre, bio y foto de perfil. Configura tu privacidad y preferencias desde el menu de ajustes.",
-      color: Color(0xFF1A5C4A),
+      color: Color(0xFF234D41),
     ),
   ];
 
@@ -89,7 +104,8 @@ class _TutorialScreenState extends State<TutorialScreen>
   }
 
   // ----------------------------------------------------------
-  // NAVEGAR A LA SIGUIENTE PÁGINA
+  // NAVEGAR A LA SIGUIENTE PAGINA
+  // Si es la ultima pagina navega directamente a HomeScreen
   // ----------------------------------------------------------
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
@@ -104,6 +120,8 @@ class _TutorialScreenState extends State<TutorialScreen>
 
   // ----------------------------------------------------------
   // NAVEGAR A HOMESCREEN
+  // Elimina todas las rutas anteriores del stack para que
+  // el usuario no pueda volver al tutorial con el boton atras
   // ----------------------------------------------------------
   void _goToHome() {
     Navigator.pushAndRemoveUntil(
@@ -123,7 +141,8 @@ class _TutorialScreenState extends State<TutorialScreen>
       body: Stack(
         children: [
           // --------------------------------------------------
-          // PAGEVIEW — una página por funcionalidad
+          // PAGEVIEW — una pagina por funcionalidad
+          // Swipe horizontal para navegar entre pasos
           // --------------------------------------------------
           PageView.builder(
             controller: _pageController,
@@ -133,7 +152,9 @@ class _TutorialScreenState extends State<TutorialScreen>
           ),
 
           // --------------------------------------------------
-          // BOTÓN OMITIR — esquina superior derecha
+          // BOTON OMITIR — esquina superior derecha
+          // Color verde oscuro sobre fondo claro de la zona
+          // superior coloreada para garantizar legibilidad
           // --------------------------------------------------
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
@@ -141,7 +162,7 @@ class _TutorialScreenState extends State<TutorialScreen>
             child: TextButton(
               onPressed: _goToHome,
               style: TextButton.styleFrom(
-                backgroundColor: Colors.black.withOpacity(0.08),
+                backgroundColor: Colors.white.withOpacity(0.25),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -162,7 +183,8 @@ class _TutorialScreenState extends State<TutorialScreen>
           ),
 
           // --------------------------------------------------
-          // CONTROLES INFERIORES — indicadores + botones
+          // CONTROLES INFERIORES — indicadores de pagina
+          // y boton de siguiente o empezar en el ultimo paso
           // --------------------------------------------------
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 40,
@@ -170,7 +192,7 @@ class _TutorialScreenState extends State<TutorialScreen>
             right: 24,
             child: Column(
               children: [
-                // Indicadores de página
+                // Indicadores de pagina animados
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -192,7 +214,7 @@ class _TutorialScreenState extends State<TutorialScreen>
 
                 const SizedBox(height: 32),
 
-                // Botón siguiente / empezar
+                // Boton siguiente o empezar en el ultimo paso
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -226,12 +248,14 @@ class _TutorialScreenState extends State<TutorialScreen>
   }
 
   // ----------------------------------------------------------
-  // CONSTRUIR PÁGINA INDIVIDUAL
+  // CONSTRUIR PAGINA INDIVIDUAL
+  // Zona superior con fondo de color e icono centrado.
+  // Zona inferior con titulo y descripcion de la funcionalidad.
   // ----------------------------------------------------------
   Widget _buildPage(_TutorialPage page) {
     return Column(
       children: [
-        // Zona superior con fondo de color e icono
+        // Zona superior coloreada con icono
         Expanded(
           flex: 5,
           child: Container(
@@ -248,7 +272,7 @@ class _TutorialScreenState extends State<TutorialScreen>
               children: [
                 const SizedBox(height: 80),
 
-                // Círculo decorativo con icono
+                // Circulo decorativo con icono de la funcionalidad
                 Container(
                   width: 140,
                   height: 140,
@@ -265,7 +289,7 @@ class _TutorialScreenState extends State<TutorialScreen>
 
                 const SizedBox(height: 40),
 
-                // Decoración de puntos
+                // Decoracion de puntos inferior
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -288,7 +312,7 @@ class _TutorialScreenState extends State<TutorialScreen>
           ),
         ),
 
-        // Zona inferior con texto
+        // Zona inferior con titulo y descripcion
         Expanded(
           flex: 4,
           child: Padding(
@@ -301,7 +325,7 @@ class _TutorialScreenState extends State<TutorialScreen>
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF234D41),
+                    color: _colorVerdeBosque,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
@@ -327,7 +351,9 @@ class _TutorialScreenState extends State<TutorialScreen>
 }
 
 // ----------------------------------------------------------
-// MODELO DE PÁGINA DEL TUTORIAL
+// MODELO DE PAGINA DEL TUTORIAL
+// Contiene los datos de cada paso: icono, titulo,
+// descripcion y color de fondo de la zona superior
 // ----------------------------------------------------------
 class _TutorialPage {
   final IconData icon;

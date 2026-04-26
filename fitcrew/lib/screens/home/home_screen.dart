@@ -1,3 +1,9 @@
+// ============================================================
+// lib/screens/home/home_screen.dart
+// Pantalla principal con feed social, navegacion inferior
+// y acceso a actividades y perfil
+// ============================================================
+
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -55,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // CARGA DE DATOS DE USUARIO
+  // Obtiene nombre y deportes favoritos desde Firestore
+  // para pasarlos a las pantallas que los necesitan
   // ----------------------------------------------------------
   Future<void> _loadUserData() async {
     if (_user == null) return;
@@ -78,12 +86,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ----------------------------------------------------------
+  // RECARGAR ESTADISTICAS
+  // Llamado desde distintos puntos de la app cuando el usuario
+  // crea o elimina un post o se apunta a una actividad
+  // ----------------------------------------------------------
   Future<void> _reloadStats() async {
     await _statsKey.currentState?.reload();
   }
 
   // ----------------------------------------------------------
-  // LÓGICA DE COMENTARIOS
+  // LOGICA DE COMENTARIOS
+  // Añade un comentario al post indicado en Firestore
   // ----------------------------------------------------------
   Future<void> _addComment(String postId, String commentText) async {
     if (_user == null) return;
@@ -104,7 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ----------------------------------------------------------
-  // LÓGICA DE ELIMINACIÓN
+  // LOGICA DE ELIMINACION
+  // Muestra dialogo de confirmacion antes de borrar el post
   // ----------------------------------------------------------
   void _confirmDeletion(BuildContext context, String postId) {
     showDialog(
@@ -221,40 +236,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // BUILD
-  // ✅ Scaffold envuelto en Stack para mostrar el tutorial
   // ----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // HomeScreen normal
-        Scaffold(
-          extendBody: true,
-          backgroundColor: _colorFondoFrio,
-          body: _isLoading
-              ? Center(
-                  child: SizedBox(
-                    width: 140,
-                    child: LinearProgressIndicator(
-                      color: _colorVerdeBosque,
-                      minHeight: 3,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                )
-              : _selectedIndex == 0
-              ? _buildHomeFeed()
-              : _buildOtherScreens(),
-          bottomNavigationBar: _buildBottomNav(),
-        ),
-
-        // ✅ Tutorial encima de todo si aplica
-      ],
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: _colorFondoFrio,
+      body: _isLoading
+          ? Center(
+              child: SizedBox(
+                width: 140,
+                child: LinearProgressIndicator(
+                  color: _colorVerdeBosque,
+                  minHeight: 3,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            )
+          : _selectedIndex == 0
+          ? _buildHomeFeed()
+          : _buildOtherScreens(),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   // ----------------------------------------------------------
   // SEGMENTO: FEED PRINCIPAL
+  // SliverAppBar con cabecera y fila de estadisticas.
+  // StreamBuilder para escuchar los posts en tiempo real.
   // ----------------------------------------------------------
   Widget _buildHomeFeed() {
     return CustomScrollView(
@@ -328,6 +337,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: CABECERA SUPERIOR
+  // Logo FitCrew + boton buscar personas con badge +
+  // boton notificaciones con badge de no leidas
   // ----------------------------------------------------------
   Widget _buildTopHeader() {
     return Padding(
@@ -360,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           Row(
             children: [
-              // Boton buscar personas con badge
+              // Boton buscar personas con badge de solicitudes pendientes
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('follow_requests')
@@ -421,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(width: 8),
 
-              // Boton notificaciones con badge
+              // Boton notificaciones con badge de no leidas
               StreamBuilder<int>(
                 stream: NotificationService().getUnreadCountStream(),
                 builder: (context, snapshot) {
@@ -482,6 +493,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: TARJETA DE POST SOCIAL
+  // Muestra avatar del autor con navegacion a su perfil,
+  // imagen del post, botones de like y comentarios y
+  // menu de eliminar si el post pertenece al usuario actual.
+  // La foto de perfil usa ValueKey para forzar reconstruccion
+  // cuando el usuario actualiza su foto de perfil.
   // ----------------------------------------------------------
   Widget _buildSocialPost(
     String postId,
@@ -517,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
               vertical: 5,
             ),
             leading: GestureDetector(
-              // ✅ Navega al perfil del usuario al pulsar el avatar
+              // Navega al perfil del autor del post al pulsar su avatar
               onTap: () {
                 if (postOwnerId.isNotEmpty) {
                   Navigator.push(
@@ -530,7 +546,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               child: CircleAvatar(
-                // ✅ Key para forzar reconstrucción al cambiar foto
+                // ValueKey basada en profilePic para forzar reconstruccion
+                // cuando el usuario actualiza su foto de perfil
                 key: ValueKey(profilePic ?? userName),
                 backgroundColor: _colorVerdeMenta,
                 backgroundImage: profilePic != null && profilePic.isNotEmpty
@@ -615,6 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     LikeButton(postId: postId, activeColor: _colorVerdeBosque),
                     const SizedBox(width: 15),
 
+                    // Boton comentarios con contador en tiempo real
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('posts')
@@ -686,6 +704,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: RENDERIZADO DE IMAGEN
+  // Soporta URLs HTTP y cadenas Base64.
+  // Muestra placeholder durante la carga y icono de error
+  // si la imagen no se puede cargar o decodificar.
   // ----------------------------------------------------------
   Widget _renderImage(String? imageStr) {
     if (imageStr == null || imageStr.isEmpty) {
@@ -777,7 +798,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ----------------------------------------------------------
-  // SEGMENTO: NAVEGACIÓN INFERIOR
+  // SEGMENTO: NAVEGACION INFERIOR
+  // Barra flotante con 5 elementos:
+  //   0 - Home (feed)
+  //   1 - Ranking
+  //   + - Crear post (abre CreatePostScreen como push)
+  //   2 - Mapa de actividades
+  //   3 - Perfil propio
   // ----------------------------------------------------------
   Widget _buildBottomNav() {
     return SafeArea(
@@ -799,7 +826,11 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(Icons.home_outlined, Icons.home, 0),
-            _buildNavItem(Icons.search_rounded, Icons.search_rounded, 1),
+            _buildNavItem(
+              Icons.emoji_events_outlined,
+              Icons.emoji_events_rounded,
+              1,
+            ),
             _buildCentralAddButton(),
             _buildNavItem(Icons.map_outlined, Icons.map_rounded, 2),
             _buildNavItem(Icons.person_outline_rounded, Icons.person, 3),
@@ -831,6 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Boton central para crear un nuevo post
   Widget _buildCentralAddButton() {
     return InkWell(
       onTap: () async {
@@ -860,6 +892,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: OTRAS PANTALLAS (IndexedStack)
+  // Gestiona las pantallas que no son el feed principal.
+  // El indice 1 (busqueda) se omite porque se abre como push.
   // ----------------------------------------------------------
   Widget _buildOtherScreens() {
     return IndexedStack(
@@ -868,6 +902,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox.shrink(),
         const RankingScreen(),
         ActivityScreen(
+          // 2 - Mapa de actividades
           userInterests: _userSports,
           onStatsChanged: () async {
             await Future.delayed(const Duration(seconds: 1));
@@ -887,6 +922,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: MODAL DE COMENTARIOS
+  // DraggableScrollableSheet con lista de comentarios en tiempo
+  // real y campo de texto para añadir nuevos comentarios.
   // ----------------------------------------------------------
   void _showComments(BuildContext context, String postId) {
     final TextEditingController commentController = TextEditingController();
@@ -1043,6 +1080,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ============================================================
 // WIDGET: _StatsRow
+// Widget independiente con GlobalKey para que HomeScreen
+// pueda llamar a reload() sin reconstruir todo el feed.
+// Muestra posts, actividades, racha y actividades organizadas.
 // ============================================================
 class _StatsRow extends StatefulWidget {
   final String uid;
@@ -1076,6 +1116,7 @@ class _StatsRowState extends State<_StatsRow> {
     }
   }
 
+  // Metodo publico llamado desde HomeScreen via GlobalKey
   Future<void> reload() async {
     if (!mounted) return;
     setState(() => _loadingStats = true);
@@ -1160,6 +1201,8 @@ class _StatsRowState extends State<_StatsRow> {
 
 // ============================================================
 // WIDGET: LikeButton
+// Boton de like con estado en tiempo real via StreamBuilder.
+// Alterna entre like y unlike al pulsarlo.
 // ============================================================
 class LikeButton extends StatelessWidget {
   final String postId;
