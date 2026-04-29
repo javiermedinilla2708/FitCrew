@@ -8,6 +8,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/services/follow_services.dart';
 import 'package:flutter/material.dart';
 
@@ -440,8 +441,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.sports_rounded,
+                    Icon(
+                      AppConstants.getSportIcon(sport),
                       size: 14,
                       color: _colorVerdeBosque,
                     ),

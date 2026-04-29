@@ -57,6 +57,8 @@ class _ActivityScreenState extends State<ActivityScreen>
   String? _selectedLocationText;
   String? _selectedLocationFull;
 
+  bool _filterByUserSports = false;
+
   // ----------------------------------------------------------
   // ESTADO UI
   // ----------------------------------------------------------
@@ -201,9 +203,20 @@ class _ActivityScreenState extends State<ActivityScreen>
   // ----------------------------------------------------------
   List<SportActivity> _filterActivities(List<SportActivity> all) {
     return all.where((a) {
-      if (_userLocation == null) return true;
-      return _distanceInKm(_userLocation!, LatLng(a.latitude, a.longitude)) <=
-          _searchRadius;
+      // Filtro por radio
+      if (_userLocation != null) {
+        final inRadius =
+            _distanceInKm(_userLocation!, LatLng(a.latitude, a.longitude)) <=
+            _searchRadius;
+        if (!inRadius) return false;
+      }
+
+      // Filtro por deportes del usuario
+      if (_filterByUserSports && widget.userInterests.isNotEmpty) {
+        return widget.userInterests.contains(a.sportType);
+      }
+
+      return true;
     }).toList();
   }
 
@@ -655,6 +668,7 @@ class _ActivityScreenState extends State<ActivityScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Handle
                 Center(
                   child: Container(
                     width: 40,
@@ -665,7 +679,12 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
+                // --------------------------------------------------
+                // RADIO DE BUSQUEDA
+                // --------------------------------------------------
                 const Text(
                   "Radio de búsqueda",
                   style: TextStyle(
@@ -726,7 +745,204 @@ class _ActivityScreenState extends State<ActivityScreen>
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // --------------------------------------------------
+                // FILTRO DE DEPORTES
+                // --------------------------------------------------
+                const Text(
+                  "Filtro de deportes",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: _colorVerdeBosque,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Elige qué actividades quieres ver en el mapa",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+
+                // Opcion: Todos los deportes
+                GestureDetector(
+                  onTap: () {
+                    setModalState(() => _filterByUserSports = false);
+                    setState(() => _filterByUserSports = false);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: !_filterByUserSports
+                          ? _colorVerdeBosque
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: !_filterByUserSports
+                            ? _colorVerdeBosque
+                            : Colors.grey[200]!,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.public_rounded,
+                          color: !_filterByUserSports
+                              ? Colors.white
+                              : Colors.grey[600],
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Todos los deportes",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: !_filterByUserSports
+                                      ? Colors.white
+                                      : _colorTextoTitulo,
+                                ),
+                              ),
+                              Text(
+                                "Ver actividades de cualquier deporte",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: !_filterByUserSports
+                                      ? Colors.white.withOpacity(0.8)
+                                      : Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!_filterByUserSports)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Opcion: Mis deportes
+                GestureDetector(
+                  onTap: () {
+                    setModalState(() => _filterByUserSports = true);
+                    setState(() => _filterByUserSports = true);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _filterByUserSports
+                          ? _colorVerdeBosque
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _filterByUserSports
+                            ? _colorVerdeBosque
+                            : Colors.grey[200]!,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.favorite_rounded,
+                          color: _filterByUserSports
+                              ? Colors.white
+                              : Colors.grey[600],
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Mis deportes",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: _filterByUserSports
+                                      ? Colors.white
+                                      : _colorTextoTitulo,
+                                ),
+                              ),
+                              // Muestra los deportes del usuario como chips
+                              if (widget.userInterests.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: widget.userInterests.map((sport) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _filterByUserSports
+                                            ? Colors.white.withOpacity(0.2)
+                                            : _colorVerdeMenta.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            AppConstants.getSportIcon(sport),
+                                            size: 10,
+                                            color: _filterByUserSports
+                                                ? Colors.white
+                                                : _colorVerdeBosque,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            sport,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: _filterByUserSports
+                                                  ? Colors.white
+                                                  : _colorVerdeBosque,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (_filterByUserSports)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Boton aplicar
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -741,7 +957,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                       elevation: 0,
                     ),
                     child: const Text(
-                      "Aplicar",
+                      "Aplicar filtros",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),

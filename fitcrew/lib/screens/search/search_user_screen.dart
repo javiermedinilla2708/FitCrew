@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/screens/profile/user_profile_screen.dart';
 import 'package:fitcrew/services/follow_services.dart';
 import 'package:fitcrew/services/search_history_service.dart';
@@ -906,8 +907,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.sports_rounded,
+                        Icon(
+                          AppConstants.getSportIcon(sport),
                           size: 11,
                           color: _colorVerdeBosque,
                         ),
