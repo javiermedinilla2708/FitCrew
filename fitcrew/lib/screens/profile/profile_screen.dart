@@ -8,6 +8,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/main.dart';
@@ -731,12 +732,17 @@ class ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: const Color.fromARGB(
+                  255,
+                  212,
+                  210,
+                  210,
+                ).withOpacity(0.14),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.delete_sweep_rounded,
-                color: Colors.red,
+                color: _colorVerdeBosque,
                 size: 36,
               ),
             ),
@@ -764,7 +770,7 @@ class ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: _colorVerdeBosque,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1029,7 +1035,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     List<String> selectedSports = List.from(_currentSports);
 
     final allSports = FilterViewModel().sports;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    ScaffoldMessenger.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -1332,13 +1338,35 @@ class ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () async {
                           if (nameController.text.trim().isEmpty) return;
                           if (selectedSports.length < 3) {
-                            scaffoldMessenger.showSnackBar(
-                              const SnackBar(
-                                content: Text("Selecciona al menos 3 deportes"),
-                                backgroundColor: _colorVerdeBosque,
-                                behavior: SnackBarBehavior.floating,
+                            Flushbar(
+                              messageText: const Text(
+                                "Selecciona al menos 3 deportes",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
-                            );
+                              icon: const Icon(
+                                Icons.sports_soccer,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: _colorVerdeBosque,
+                              borderRadius: BorderRadius.circular(15),
+                              margin: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 80,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              flushbarPosition: FlushbarPosition.BOTTOM,
+                            ).show(context);
+
                             return;
                           }
 
@@ -1390,21 +1418,63 @@ class ProfileScreenState extends State<ProfileScreen> {
 
                             if (ctx.mounted) Navigator.pop(ctx);
 
-                            scaffoldMessenger.showSnackBar(
-                              const SnackBar(
-                                content: Text("Perfil actualizado"),
-                                backgroundColor: _colorVerdeBosque,
-                                behavior: SnackBarBehavior.floating,
+                            Flushbar(
+                              messageText: const Text(
+                                "Perfil actualizado",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
-                            );
+                              icon: const Icon(
+                                Icons.check_circle,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: _colorVerdeBosque,
+                              borderRadius: BorderRadius.circular(15),
+                              margin: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 100,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              flushbarPosition: FlushbarPosition.BOTTOM,
+                            ).show(context);
                           } catch (e) {
-                            scaffoldMessenger.showSnackBar(
-                              SnackBar(
-                                content: Text("Error al guardar: $e"),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
+                            Flushbar(
+                              messageText: const Text(
+                                "Error al guardar",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
-                            );
+                              icon: const Icon(
+                                Icons.error,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: _colorVerdeBosque,
+                              borderRadius: BorderRadius.circular(15),
+                              margin: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 100,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              flushbarPosition: FlushbarPosition.BOTTOM,
+                            ).show(context);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1552,7 +1622,6 @@ class ProfileScreenState extends State<ProfileScreen> {
   // ELIMINAR CUENTA
   // ----------------------------------------------------------
   void _handleDeleteAccount(BuildContext context) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
 
     showDialog(
@@ -1560,16 +1629,16 @@ class ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         backgroundColor: Colors.white,
-        title: const Row(
+        title: Row(
           children: [
             Icon(
               Icons.warning_amber_rounded,
               color: _colorVerdeBosque,
               size: 28,
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text(
-              "Borrar cuenta?",
+              "¿Borrar cuenta?",
               style: TextStyle(
                 color: _colorVerdeBosque,
                 fontWeight: FontWeight.bold,
@@ -1578,7 +1647,7 @@ class ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         content: const Text(
-          "Esta accion es irreversible. Se borraran tus posts y progreso en FitCrew. Estas seguro?",
+          "Esta acción es irreversible. Se borrarán tus posts y progreso en FitCrew. ¿Estás seguro?",
           style: TextStyle(color: Colors.grey),
         ),
         actions: [
@@ -1599,6 +1668,8 @@ class ProfileScreenState extends State<ProfileScreen> {
 
               final success = await authVM.deleteAccount();
 
+              if (!context.mounted) return;
+
               if (success) {
                 await Future.delayed(const Duration(milliseconds: 300));
                 navigatorKey.currentState?.pushAndRemoveUntil(
@@ -1606,18 +1677,29 @@ class ProfileScreenState extends State<ProfileScreen> {
                   (route) => false,
                 );
               } else {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      authVM.errorMessage ?? "Error al eliminar la cuenta",
-                    ),
-                    backgroundColor: _colorVerdeBosque,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Flushbar(
+                  messageText: const Text(
+                    "Error al eliminar la cuenta.",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontSize: 14,
                     ),
                   ),
-                );
+                  icon: const Icon(Icons.error, color: Colors.white, size: 22),
+                  duration: const Duration(seconds: 3),
+                  backgroundColor: const Color(0xFF234D41),
+                  borderRadius: BorderRadius.circular(15),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  flushbarPosition: FlushbarPosition.BOTTOM,
+                ).show(context);
               }
             },
             child: const Text(
