@@ -30,6 +30,10 @@ class PushNotificationService {
 
   // ----------------------------------------------------------
   // INICIALIZAR
+  // Configura FCM, permisos, canal Android y listeners.
+  // El token se guarda cuando el usuario hace login via
+  // authStateChanges para evitar que se llame antes de que
+  // haya usuario autenticado en Firebase Auth
   // ----------------------------------------------------------
   static Future<void> initialize() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -64,16 +68,27 @@ class PushNotificationService {
       },
     );
 
-    await _saveToken();
+    // Actualizar token si Firebase lo rota automáticamente
     _messaging.onTokenRefresh.listen(_updateToken);
 
+    // Mostrar notificación local cuando la app está en foreground
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('FCM: Mensaje en foreground: ${message.messageId}');
       showLocalNotification(message);
     });
 
+    // App abierta desde notificación en background
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('FCM: App abierta desde notificación: ${message.data}');
+    });
+
+    // Guardar token cada vez que el usuario hace login.
+    // Esto soluciona el problema de que initialize() se llama
+    // antes de que haya usuario autenticado en Firebase Auth
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) {
+        await _saveToken();
+      }
     });
   }
 
@@ -99,7 +114,7 @@ class PushNotificationService {
   }
 
   // ----------------------------------------------------------
-  // ACTUALIZAR TOKEN
+  // ACTUALIZAR TOKEN CUANDO FIREBASE LO ROTA
   // ----------------------------------------------------------
   static Future<void> _updateToken(String token) async {
     try {
@@ -118,6 +133,7 @@ class PushNotificationService {
 
   // ----------------------------------------------------------
   // MOSTRAR NOTIFICACIÓN LOCAL
+  // Se usa tanto en foreground como en background
   // ----------------------------------------------------------
   static Future<void> showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
@@ -149,7 +165,7 @@ class PushNotificationService {
   }
 
   // ----------------------------------------------------------
-  // OBTENER TOKEN
+  // OBTENER TOKEN ACTUAL
   // ----------------------------------------------------------
   static Future<String?> getToken() async {
     return await _messaging.getToken();
@@ -157,6 +173,8 @@ class PushNotificationService {
 
   // ----------------------------------------------------------
   // LIMPIAR TOKEN AL CERRAR SESIÓN
+  // Elimina el token de Firestore y de FCM para que el usuario
+  // no reciba notificaciones en este dispositivo tras el logout
   // ----------------------------------------------------------
   static Future<void> clearToken() async {
     try {

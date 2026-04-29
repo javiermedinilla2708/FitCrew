@@ -68,6 +68,17 @@ class FilterViewModel extends ChangeNotifier {
   bool get canFinalize => _selectedSports.length >= 3 && !_isLoading;
 
   // ----------------------------------------------------------
+  // RESETEAR ESTADO
+  // Limpia los deportes seleccionados para que al llegar
+  // a FilterScreen desde un nuevo registro no aparezcan
+  // deportes seleccionados de sesiones anteriores
+  // ----------------------------------------------------------
+  void reset() {
+    _selectedSports.clear();
+    notifyListeners();
+  }
+
+  // ----------------------------------------------------------
   // TOGGLE DE SELECCIÓN DE DEPORTE
   // Si el deporte ya está seleccionado lo deselecciona,
   // si no está seleccionado lo añade a la lista

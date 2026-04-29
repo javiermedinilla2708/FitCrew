@@ -6,6 +6,7 @@
 // ============================================================
 
 import 'package:fitcrew/screens/home/home_screen.dart';
+import 'package:fitcrew/viewmodels/filter_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitcrew/screens/filters/filter_screen.dart';
@@ -96,6 +97,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
+      if (context.mounted) {
+        context.read<FilterViewModel>().reset();
+      }
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const FilterScreen()),
@@ -120,6 +124,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (result['success'] == true) {
       if (result['isNewUser'] == true) {
+        if (context.mounted) {
+          context.read<FilterViewModel>().reset();
+        }
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const FilterScreen()),

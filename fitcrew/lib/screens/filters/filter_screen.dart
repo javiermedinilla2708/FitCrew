@@ -162,21 +162,33 @@ class FilterScreen extends StatelessWidget {
                   final success = await vm.saveUserSports();
                   if (success && context.mounted) {
                     await Flushbar(
-                      message:
-                          "Te hemos enviado un correo de verificacion. Revisalo cuando puedas.",
+                      messageText: Text(
+                        "Te hemos enviado un correo de verificacion. Revisalo cuando puedas.",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
                       icon: const Icon(
                         Icons.mark_email_unread_rounded,
                         color: Colors.white,
-                        size: 20,
+                        size: 22,
                       ),
                       duration: const Duration(seconds: 3),
                       backgroundColor: const Color(0xFF234D41),
-                      borderRadius: BorderRadius.circular(14),
-                      margin: const EdgeInsets.all(16),
-                      padding: const EdgeInsets.all(16),
-                      flushbarPosition: FlushbarPosition.TOP,
+                      borderRadius: BorderRadius.circular(15),
+                      margin: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 30,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      flushbarPosition: FlushbarPosition.BOTTOM,
                     ).show(context);
-
                     if (context.mounted) {
                       Navigator.pushAndRemoveUntil(
                         context,

@@ -9,6 +9,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/models/sport_activity.dart';
@@ -1146,9 +1147,11 @@ class _ActivityScreenState extends State<ActivityScreen>
     ActivityViewModel vm,
     String activityId,
   ) {
+    ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
@@ -1201,21 +1204,42 @@ class _ActivityScreenState extends State<ActivityScreen>
                   ),
                 ),
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
+
                   final ok = await vm.deleteActivity(activityId);
+
                   if (ok && mounted) {
                     _dismissCard();
                     widget.onStatsChanged?.call();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text("Actividad eliminada"),
-                        backgroundColor: Colors.grey[700],
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                    Flushbar(
+                      messageText: Text(
+                        "Actividad eliminada",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
                       ),
-                    );
+                      icon: const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: Colors.grey[700]!,
+                      borderRadius: BorderRadius.circular(15),
+                      margin: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 100, // ajusta este valor para subir o bajar
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      flushbarPosition: FlushbarPosition.BOTTOM,
+                    ).show(context);
                   }
                 },
                 child: const Text(
@@ -1231,7 +1255,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text(
                   "Cancelar",
                   style: TextStyle(
@@ -1869,16 +1893,35 @@ class _ActivityScreenState extends State<ActivityScreen>
                           if (mounted) {
                             Navigator.pop(context);
                             widget.onStatsChanged?.call();
-                            scaffoldMessenger.showSnackBar(
-                              SnackBar(
-                                content: const Text("¡Actividad creada!"),
-                                backgroundColor: _colorVerdeBosque,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+
+                            Flushbar(
+                              messageText: Text(
+                                "¡Actividad creada!",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontSize: 14,
                                 ),
                               ),
-                            );
+                              icon: const Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: _colorVerdeBosque,
+                              borderRadius: BorderRadius.circular(15),
+                              margin: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 100,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              flushbarPosition: FlushbarPosition.BOTTOM,
+                            ).show(context);
                           }
                         },
                         style: ElevatedButton.styleFrom(
