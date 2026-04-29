@@ -1382,8 +1382,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                                   'favoriteSports': selectedSports,
                                 });
 
-                            // Actualizar profilePic en todos los posts del usuario
-                            // Solo si la foto ha cambiado
                             if (previewPicB64 != _currentPicB64) {
                               final posts = await FirebaseFirestore.instance
                                   .collection('posts')
@@ -1402,11 +1400,9 @@ class ProfileScreenState extends State<ProfileScreen> {
                               }
                             }
 
-                            // Actualizar displayName en Firebase Auth
                             await FirebaseAuth.instance.currentUser
                                 ?.updateDisplayName(nameController.text.trim());
 
-                            // Actualizar estado local sin recargar
                             if (mounted) {
                               setState(() {
                                 _currentName = nameController.text.trim();
@@ -1623,94 +1619,194 @@ class ProfileScreenState extends State<ProfileScreen> {
   // ----------------------------------------------------------
   void _handleDeleteAccount(BuildContext context) {
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: _colorVerdeBosque,
-              size: 28,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              "¿Borrar cuenta?",
-              style: TextStyle(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          backgroundColor: Colors.white,
+          scrollable: true,
+          insetPadding: EdgeInsets.only(left: 24, right: 24, top: 24),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
                 color: _colorVerdeBosque,
-                fontWeight: FontWeight.bold,
+                size: 28,
+              ),
+              SizedBox(width: 10),
+              Text(
+                "Borrar cuenta?",
+                style: TextStyle(
+                  color: _colorVerdeBosque,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Esta accion es irreversible. Se borraran tus posts y progreso en FitCrew.",
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Por seguridad confirma tu contrasena:",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _colorVerdeBosque,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  hintText: "Tu contrasena",
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[200]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[200]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: _colorVerdeBosque,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
+                    onPressed: () => setDialogState(
+                      () => obscurePassword = !obscurePassword,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _colorVerdeBosque,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () async {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) return;
+
+                Navigator.pop(ctx);
+
+                final reauth = await authVM.reauthenticate(password);
+
+                if (!reauth) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          "Contrasena incorrecta",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: Colors.red[700],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        margin: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: 30,
+                        ),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                final success = await authVM.deleteAccount();
+
+                if (success) {
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  navigatorKey.currentState?.pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                    (route) => false,
+                  );
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          "Error al eliminar la cuenta",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: Colors.red[700],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        margin: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: 30,
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                "ELIMINAR TODO",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
-        content: const Text(
-          "Esta acción es irreversible. Se borrarán tus posts y progreso en FitCrew. ¿Estás seguro?",
-          style: TextStyle(color: Colors.grey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text("Cancelar", style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _colorVerdeBosque,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-
-              final success = await authVM.deleteAccount();
-
-              if (!context.mounted) return;
-
-              if (success) {
-                await Future.delayed(const Duration(milliseconds: 300));
-                navigatorKey.currentState?.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                  (route) => false,
-                );
-              } else {
-                Flushbar(
-                  messageText: const Text(
-                    "Error al eliminar la cuenta.",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                  icon: const Icon(Icons.error, color: Colors.white, size: 22),
-                  duration: const Duration(seconds: 3),
-                  backgroundColor: const Color(0xFF234D41),
-                  borderRadius: BorderRadius.circular(15),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  flushbarPosition: FlushbarPosition.BOTTOM,
-                ).show(context);
-              }
-            },
-            child: const Text(
-              "ELIMINAR TODO",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

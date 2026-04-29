@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitcrew/core/utils/app_constants.dart';
 import 'package:fitcrew/screens/activities/activities_screen.dart';
 import 'package:fitcrew/screens/notifications/notification_screen.dart';
 import 'package:fitcrew/screens/post/create_post_screen.dart';
@@ -360,6 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     data['description'] ?? "",
                     data['userId'] ?? "",
                     data['profilePic'],
+                    data,
                   );
                 }, childCount: posts.length),
               ),
@@ -545,6 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String description,
     String postOwnerId,
     String? profilePic,
+    Map<String, dynamic> data,
   ) {
     final bool isMyPost = _user?.uid == postOwnerId;
 
@@ -564,56 +567,105 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 5,
-            ),
-            leading: GestureDetector(
-              // Navega al perfil del autor del post al pulsar su avatar
-              onTap: () {
-                if (postOwnerId.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          UserProfileScreen(uid: postOwnerId, name: userName),
-                    ),
-                  );
-                }
-              },
-              child: CircleAvatar(
-                // ValueKey basada en profilePic para forzar reconstruccion
-                // cuando el usuario actualiza su foto de perfil
-                key: ValueKey(profilePic ?? userName),
-                backgroundColor: _colorVerdeMenta,
-                backgroundImage: profilePic != null && profilePic.isNotEmpty
-                    ? MemoryImage(base64Decode(profilePic))
-                    : null,
-                child: profilePic == null || profilePic.isEmpty
-                    ? Text(
-                        userName[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: _colorVerdeBosque,
-                          fontWeight: FontWeight.bold,
+          // --------------------------------------------------
+          // CABECERA: avatar + info + menu
+          // --------------------------------------------------
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar del autor
+                GestureDetector(
+                  onTap: () {
+                    if (postOwnerId.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserProfileScreen(
+                            uid: postOwnerId,
+                            name: userName,
+                          ),
                         ),
-                      )
-                    : null,
-              ),
-            ),
-            title: Text(
-              userName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Text(
-              "$sport • $level",
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            trailing: isMyPost
-                ? PopupMenuButton<String>(
+                      );
+                    }
+                  },
+                  child: CircleAvatar(
+                    key: ValueKey(profilePic ?? userName),
+                    radius: 22,
+                    backgroundColor: _colorVerdeMenta,
+                    backgroundImage: profilePic != null && profilePic.isNotEmpty
+                        ? MemoryImage(base64Decode(profilePic))
+                        : null,
+                    child: profilePic == null || profilePic.isEmpty
+                        ? Text(
+                            userName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: _colorVerdeBosque,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Nombre + meta info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: _colorTextoTitulo,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Chips de deporte, nivel y ubicacion
+                      // Chips de deporte, nivel y ubicacion
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          // Chip deporte con icono de AppConstants
+                          _buildMetaChip(
+                            icon: AppConstants.getSportIcon(sport),
+                            label: sport,
+                          ),
+
+                          // Chip nivel con icono segun nivel
+                          _buildMetaChip(
+                            icon: _getLevelIcon(level),
+                            label: level,
+                          ),
+
+                          // Chip ubicacion si existe
+                          if ((data['location'] as String?) != null &&
+                              (data['location'] as String).isNotEmpty)
+                            _buildMetaChip(
+                              icon: Icons.location_on_outlined,
+                              label: data['location'] as String,
+                              maxWidth: 160,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Menu eliminar si es mi post
+                if (isMyPost)
+                  PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
                       color: Colors.grey[400],
+                      size: 20,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -642,15 +694,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-                  )
-                : null,
+                  ),
+              ],
+            ),
           ),
 
+          // --------------------------------------------------
+          // IMAGEN
+          // --------------------------------------------------
           if (imageStr != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(22),
                 child: Container(
                   width: double.infinity,
                   color: _colorFondoFrio,
@@ -659,17 +715,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+          // --------------------------------------------------
+          // ACCIONES + DESCRIPCION + ETIQUETADOS
+          // --------------------------------------------------
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Fila de like y comentarios
                 Row(
                   children: [
                     LikeButton(postId: postId, activeColor: _colorVerdeBosque),
-                    const SizedBox(width: 15),
-
-                    // Boton comentarios con contador en tiempo real
+                    const SizedBox(width: 12),
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('posts')
@@ -677,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           .collection('comments')
                           .snapshots(),
                       builder: (context, snapshot) {
-                        int count = snapshot.hasData
+                        final count = snapshot.hasData
                             ? snapshot.data!.docs.length
                             : 0;
                         return GestureDetector(
@@ -697,11 +755,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               if (count > 0) ...[
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 Text(
                                   "$count",
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ],
@@ -715,12 +774,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 12),
 
+                // Descripcion
                 RichText(
                   text: TextSpan(
                     style: const TextStyle(
                       color: _colorTextoTitulo,
                       fontSize: 14,
-                      height: 1.3,
+                      height: 1.4,
                     ),
                     children: [
                       TextSpan(
@@ -731,7 +791,104 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+
+                // Usuarios etiquetados
+                if ((data['taggedUsers'] as List?)?.isNotEmpty == true) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_alt_outlined,
+                        size: 14,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "con",
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          // Nombres separados por coma
+                          (data['taggedUsers'] as List)
+                              .map(
+                                (u) =>
+                                    (u as Map<String, dynamic>)['name'] ?? '',
+                              )
+                              .join(', '),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _colorVerdeBosque,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // HELPER: chip de metadatos (deporte, nivel, ubicacion)
+  // ----------------------------------------------------------
+  // ----------------------------------------------------------
+  // HELPER: icono segun nivel de intensidad
+  // ----------------------------------------------------------
+  IconData _getLevelIcon(String level) {
+    switch (level.toLowerCase()) {
+      case 'principiante':
+        return Icons.signal_cellular_alt_1_bar_rounded;
+      case 'intermedio':
+        return Icons.signal_cellular_alt_2_bar_rounded;
+      case 'avanzado':
+        return Icons.signal_cellular_alt_rounded;
+      case 'profesional':
+        return Icons.military_tech_rounded;
+      default:
+        return Icons.bar_chart_rounded;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // HELPER: chip de metadatos (deporte, nivel, ubicacion)
+  // ----------------------------------------------------------
+  Widget _buildMetaChip({
+    required IconData icon,
+    required String label,
+    double? maxWidth,
+  }) {
+    return Container(
+      constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth) : null,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _colorVerdeMenta.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: _colorVerdeBosque),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: _colorVerdeBosque,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

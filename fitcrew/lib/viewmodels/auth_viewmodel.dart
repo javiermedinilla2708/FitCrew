@@ -106,6 +106,13 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------
+  // REAUTENTICAR
+  // ----------------------------------------------------------
+  Future<bool> reauthenticate(String password) async {
+    return await _authService.reauthenticate(password);
+  }
+
+  // ----------------------------------------------------------
   // ELIMINAR CUENTA
   // Delega completamente en AuthService, que se encarga de:
   //   1. Eliminar los posts del usuario en Firestore
@@ -114,19 +121,16 @@ class AuthViewModel extends ChangeNotifier {
   // Devuelve true si se completó con éxito, false si hubo error.
   // ----------------------------------------------------------
   Future<bool> deleteAccount() async {
-    _setLoading(true);
-    _clearError();
     try {
       await _authService.deleteUserAccount();
       return true;
     } catch (e) {
+      debugPrint("Error en ViewModel deleteAccount: $e");
       _errorMessage = e.toString();
+      notifyListeners();
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
-
   // ----------------------------------------------------------
   // HELPERS PRIVADOS DE ESTADO
   // ----------------------------------------------------------

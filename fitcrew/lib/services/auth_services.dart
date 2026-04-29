@@ -160,6 +160,29 @@ class AuthService {
   }
 
   // ----------------------------------------------------------
+  // REAUTENTICAR USUARIO
+  // Necesario antes de operaciones sensibles como eliminar
+  // la cuenta cuando han pasado mas de 5 minutos desde el login
+  // ----------------------------------------------------------
+  Future<bool> reauthenticate(String password) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) return false;
+
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      return true;
+    } catch (e) {
+      debugPrint("Error reautenticando: $e");
+      return false;
+    }
+  }
+
+  // ----------------------------------------------------------
   // ELIMINAR CUENTA DE USUARIO — borrado completo
   // Proceso en orden:
   //   1.  Limpiar token FCM del dispositivo
@@ -384,6 +407,7 @@ class AuthService {
       }
       rethrow;
     } catch (e) {
+      debugPrint("Error deleteUserAccount: $e");
       throw "No se pudo eliminar la cuenta.";
     }
   }
