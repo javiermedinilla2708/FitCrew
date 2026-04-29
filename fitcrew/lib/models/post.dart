@@ -25,6 +25,8 @@ class Post {
   final int likesCount; // Contador auxiliar de likes
   final int commentsCount; // Contador auxiliar de comentarios
   final String level; // Nivel del deporte (ej: "Intermedio")
+  final String? location; //Ubicacion del post
+  final List<Map<String, String>> taggedUsers; //Usuarios etiquetados
 
   const Post({
     required this.id,
@@ -39,6 +41,8 @@ class Post {
     this.likesCount = 0,
     this.commentsCount = 0,
     required this.level,
+    this.location,
+    this.taggedUsers = const [],
   });
 
   // ----------------------------------------------------------
@@ -62,6 +66,14 @@ class Post {
       likesCount: map['likesCount'] ?? 0,
       commentsCount: map['commentsCount'] ?? 0,
       level: map['level'] ?? 'Intermedio',
+      location: map['location'],
+      taggedUsers: map['taggedUsers'] != null
+          ? List<Map<String, String>>.from(
+              (map['taggedUsers'] as List).map(
+                (e) => Map<String, String>.from(e as Map),
+              ),
+            )
+          : [],
     );
   }
 
@@ -83,6 +95,8 @@ class Post {
       'likesCount': likesCount,
       'commentsCount': commentsCount,
       'level': level,
+      'location': location,
+      'taggedUsers': taggedUsers,
     };
   }
 
@@ -101,6 +115,8 @@ class Post {
     int? likesCount,
     int? commentsCount,
     String? level,
+    String? location,
+    List<Map<String, String>>? taggedUsers,
   }) {
     return Post(
       id: id ?? this.id,
@@ -114,6 +130,8 @@ class Post {
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
       level: level ?? this.level,
+      location: location ?? this.location,
+      taggedUsers: taggedUsers ?? this.taggedUsers,
     );
   }
 }

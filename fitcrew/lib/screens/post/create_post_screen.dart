@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:fitcrew/core/utils/app_constants.dart';
 import '../../viewmodels/post_viewmodel.dart';
@@ -31,6 +36,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   String _selectedLevel = AppConstants.skillLevels.first;
 
+  String? _selectedLocation;
+  final List<Map<String, String>> _taggedUsers = [];
   // ----------------------------------------------------------
   // CICLO DE VIDA
   // ----------------------------------------------------------
@@ -69,6 +76,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       description: _descriptionController.text,
       sportType: _selectedSport!,
       level: _selectedLevel,
+      location: _selectedLocation,
+      taggedUsers: _taggedUsers,
     );
 
     if (success && mounted) Navigator.pop(context);
@@ -278,21 +287,648 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // ----------------------------------------------------------
   // SEGMENTO: ACCESOS SOCIALES (ubicación y amigos)
   // ----------------------------------------------------------
+  // ----------------------------------------------------------
+  // SEGMENTO: ACCESOS SOCIALES
+  // ----------------------------------------------------------
   Widget _buildSocialShortcuts() {
     return Row(
       children: [
         _buildSmallActionChip(
           icon: Icons.location_on_rounded,
-          label: "Añadir ubicación",
-          onTap: () => _showSnackBar("Próximamente: Selector de lugares"),
+          label: _selectedLocation ?? "Añadir ubicación",
+          onTap: _showLocationPicker,
         ),
         const SizedBox(width: 10),
         _buildSmallActionChip(
           icon: Icons.group_add_rounded,
-          label: "Con quién",
-          onTap: () => _showSnackBar("Próximamente: Etiquetar amigos"),
+          label: _taggedUsers.isEmpty
+              ? "Con quién"
+              : "Con ${_taggedUsers.length} persona${_taggedUsers.length > 1 ? 's' : ''}",
+          onTap: _showTagUsersPicker,
         ),
       ],
+    );
+  }
+
+  // ----------------------------------------------------------
+  // MODAL: BUSCADOR DE UBICACIÓN (Nominatim)
+  // ----------------------------------------------------------
+  void _showLocationPicker() {
+    final TextEditingController locationController = TextEditingController();
+    List<Map<String, dynamic>> suggestions = [];
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Cabecera
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _colorVerdeMenta,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.location_on_rounded,
+                          color: _colorVerdeBosque,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        "Añadir ubicación",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _colorVerdeBosque,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Buscador
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        const Icon(
+                          Icons.search_rounded,
+                          color: _colorVerdeBosque,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: locationController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: "Buscar lugar...",
+                              hintStyle: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            onChanged: (query) async {
+                              if (query.length < 3) {
+                                setModalState(() => suggestions = []);
+                                return;
+                              }
+                              setModalState(() => isLoading = true);
+                              try {
+                                final uri = Uri.parse(
+                                  'https://nominatim.openstreetmap.org/search'
+                                  '?q=${Uri.encodeComponent(query)}'
+                                  '&format=json&limit=5&addressdetails=1&accept-language=es',
+                                );
+                                final response = await http.get(
+                                  uri,
+                                  headers: {'User-Agent': 'FitCrew/1.0'},
+                                );
+                                if (response.statusCode == 200) {
+                                  setModalState(() {
+                                    suggestions =
+                                        (jsonDecode(response.body) as List)
+                                            .cast<Map<String, dynamic>>();
+                                    isLoading = false;
+                                  });
+                                }
+                              } catch (_) {
+                                setModalState(() => isLoading = false);
+                              }
+                            },
+                          ),
+                        ),
+                        if (locationController.text.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              locationController.clear();
+                              setModalState(() => suggestions = []);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: Colors.grey[400],
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Opción quitar ubicación si ya hay una
+                if (_selectedLocation != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 4,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedLocation = null);
+                        Navigator.pop(context);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: Colors.red[400],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Quitar ubicación",
+                            style: TextStyle(
+                              color: Colors.red[400],
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                const Divider(),
+
+                // Lista de sugerencias
+                Expanded(
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: _colorVerdeBosque,
+                          ),
+                        )
+                      : suggestions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.location_searching_rounded,
+                                size: 48,
+                                color: Colors.grey[300],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                "Escribe para buscar un lugar",
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: suggestions.length,
+                          itemBuilder: (context, index) {
+                            final place = suggestions[index];
+                            final name = place['display_name'] as String;
+                            final address =
+                                place['address'] as Map<String, dynamic>? ?? {};
+                            final city =
+                                address['city'] ??
+                                address['town'] ??
+                                address['village'] ??
+                                address['county'] ??
+                                '';
+                            final country = address['country'] ?? '';
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 4,
+                              ),
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: _colorVerdeMenta.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.location_on_outlined,
+                                  color: _colorVerdeBosque,
+                                  size: 18,
+                                ),
+                              ),
+                              title: Text(
+                                city.isNotEmpty
+                                    ? city.toString()
+                                    : name.split(',').first,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: _colorVerdeBosque,
+                                ),
+                              ),
+                              subtitle: country.isNotEmpty
+                                  ? Text(
+                                      name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[500],
+                                      ),
+                                    )
+                                  : null,
+                              onTap: () {
+                                setState(() => _selectedLocation = name);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // MODAL: BUSCADOR DE USUARIOS PARA ETIQUETAR
+  // ----------------------------------------------------------
+  void _showTagUsersPicker() {
+    final TextEditingController searchController = TextEditingController();
+    List<Map<String, dynamic>> results = [];
+    bool isLoading = false;
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Cabecera
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _colorVerdeMenta,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.group_add_rounded,
+                          color: _colorVerdeBosque,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        "Etiquetar personas",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _colorVerdeBosque,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Chips de usuarios ya etiquetados
+                if (_taggedUsers.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _taggedUsers.map((user) {
+                        return Chip(
+                          label: Text(
+                            user['name'] ?? '',
+                            style: const TextStyle(
+                              color: _colorVerdeBosque,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          backgroundColor: _colorVerdeMenta,
+                          deleteIconColor: _colorVerdeBosque,
+                          onDeleted: () {
+                            setState(
+                              () => _taggedUsers.removeWhere(
+                                (u) => u['uid'] == user['uid'],
+                              ),
+                            );
+                            setModalState(() {});
+                          },
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                if (_taggedUsers.isNotEmpty) const SizedBox(height: 12),
+
+                // Buscador
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        const Icon(
+                          Icons.search_rounded,
+                          color: _colorVerdeBosque,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: "Buscar usuario...",
+                              hintStyle: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            onChanged: (query) async {
+                              if (query.trim().isEmpty) {
+                                setModalState(() => results = []);
+                                return;
+                              }
+                              setModalState(() => isLoading = true);
+                              try {
+                                final queryLower = query.trim().toLowerCase();
+                                final snap = await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .orderBy('name')
+                                    .startAt([queryLower])
+                                    .endAt(['$queryLower\uf8ff'])
+                                    .limit(10)
+                                    .get();
+
+                                setModalState(() {
+                                  results = snap.docs
+                                      .where((d) => d.id != currentUid)
+                                      .map(
+                                        (d) => {
+                                          'uid': d.id,
+                                          'name': d.data()['name'] ?? '',
+                                          'profilePic': d.data()['profilePic'],
+                                        },
+                                      )
+                                      .toList();
+                                  isLoading = false;
+                                });
+                              } catch (_) {
+                                setModalState(() => isLoading = false);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Divider(height: 20),
+
+                // Lista de resultados
+                Expanded(
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: _colorVerdeBosque,
+                          ),
+                        )
+                      : results.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_search_rounded,
+                                size: 48,
+                                color: Colors.grey[300],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                "Escribe para buscar usuarios",
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: results.length,
+                          itemBuilder: (context, index) {
+                            final user = results[index];
+                            final uid = user['uid'] as String;
+                            final name = user['name'] as String;
+                            final profilePic = user['profilePic'] as String?;
+                            final isTagged = _taggedUsers.any(
+                              (u) => u['uid'] == uid,
+                            );
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 4,
+                              ),
+                              leading: CircleAvatar(
+                                radius: 22,
+                                backgroundColor: _colorVerdeMenta,
+                                backgroundImage:
+                                    profilePic != null && profilePic.isNotEmpty
+                                    ? MemoryImage(base64Decode(profilePic))
+                                    : null,
+                                child: profilePic == null || profilePic.isEmpty
+                                    ? Text(
+                                        name[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          color: _colorVerdeBosque,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              title: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: _colorVerdeBosque,
+                                ),
+                              ),
+                              trailing: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isTagged) {
+                                      _taggedUsers.removeWhere(
+                                        (u) => u['uid'] == uid,
+                                      );
+                                    } else {
+                                      _taggedUsers.add({
+                                        'uid': uid,
+                                        'name': name,
+                                      });
+                                    }
+                                  });
+                                  setModalState(() {});
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isTagged
+                                        ? _colorVerdeMenta
+                                        : _colorVerdeBosque,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    isTagged ? "Etiquetado" : "Etiquetar",
+                                    style: TextStyle(
+                                      color: isTagged
+                                          ? _colorVerdeBosque
+                                          : Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+
+                // Botón confirmar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _colorVerdeBosque,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _taggedUsers.isEmpty
+                            ? "Cerrar"
+                            : "Confirmar (${_taggedUsers.length})",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
