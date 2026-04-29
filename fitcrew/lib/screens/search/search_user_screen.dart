@@ -84,8 +84,12 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
   // GUARDAR BÚSQUEDA EN SQLITE Y RECARGAR HISTORIAL
   // Se llama cuando el usuario pulsa una tarjeta de resultado
   // ----------------------------------------------------------
-  Future<void> _onUserTapped(String uid, String name) async {
-    await _historyService.saveSearch(uid, name);
+  Future<void> _onUserTapped(
+    String uid,
+    String name, {
+    String? profilePic,
+  }) async {
+    await _historyService.saveSearch(uid, name, profilePic: profilePic);
     await _loadHistory();
     if (mounted) {
       Navigator.push(
@@ -581,14 +585,20 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
                 leading: CircleAvatar(
                   radius: 20,
                   backgroundColor: _colorVerdeMenta,
-                  child: Text(
-                    entry.name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: _colorVerdeBosque,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                  backgroundImage:
+                      entry.profilePic != null && entry.profilePic!.isNotEmpty
+                      ? MemoryImage(base64Decode(entry.profilePic!))
+                      : null,
+                  child: entry.profilePic == null || entry.profilePic!.isEmpty
+                      ? Text(
+                          entry.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: _colorVerdeBosque,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        )
+                      : null,
                 ),
                 title: Text(
                   entry.name,
@@ -733,7 +743,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     final config = _buttonConfig(status);
 
     return GestureDetector(
-      onTap: () => _onUserTapped(uid, name),
+      onTap: () => _onUserTapped(uid, name, profilePic: profilePic),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -812,7 +822,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
     final config = _buttonConfig(status);
 
     return GestureDetector(
-      onTap: () => _onUserTapped(uid, name),
+      onTap: () => _onUserTapped(uid, name, profilePic: profilePic),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -832,7 +842,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
           children: [
             Row(
               children: [
-                // ✅ Muestra foto si existe, inicial si no
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: _colorVerdeMenta,

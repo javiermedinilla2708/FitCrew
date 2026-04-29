@@ -18,12 +18,14 @@ class SearchHistoryEntry {
   final int? id;
   final String uid; // UID del usuario buscado
   final String name; // Nombre del usuario buscado
+  final String? profilePic; // Foto de perfil en Base64
   final int timestamp; // Unix timestamp de la búsqueda
 
   const SearchHistoryEntry({
     this.id,
     required this.uid,
     required this.name,
+    this.profilePic,
     required this.timestamp,
   });
 
@@ -36,6 +38,7 @@ class SearchHistoryEntry {
       id: map['id'] as int?,
       uid: map['uid'] as String,
       name: map['name'] as String,
+      profilePic: map['profilePic'] as String?,
       timestamp: map['timestamp'] as int,
     );
   }
@@ -49,6 +52,7 @@ class SearchHistoryEntry {
       if (id != null) 'id': id,
       'uid': uid,
       'name': name,
+      'profilePic': profilePic,
       'timestamp': timestamp,
     };
   }
@@ -71,7 +75,8 @@ class SearchHistoryService {
   // ----------------------------------------------------------
   // INICIALIZAR BASE DE DATOS
   // Crea el archivo SQLite en el directorio del dispositivo
-  // y la tabla search_history si no existe
+  // y la tabla search_history si no existe.
+  // version: 2 — añade columna profilePic con onUpgrade
   // ----------------------------------------------------------
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -80,37 +85,53 @@ class SearchHistoryService {
   }
 
   Future<Database> _initDb() async {
-    // Obtiene la ruta del directorio de bases de datos del dispositivo
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'fitcrew_search_history.db');
 
-    return await openDatabase(path, version: 1, onCreate: _createTable);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createTable,
+      onUpgrade: _onUpgrade,
+    );
   }
 
   // ----------------------------------------------------------
-  // CREAR TABLA — SQL DDL
+  // CREAR TABLA — SQL DDL version 2
   // search_history almacena las búsquedas recientes del usuario
+  // incluye profilePic en Base64 para mostrar la foto
   // ----------------------------------------------------------
   Future<void> _createTable(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS search_history (
-        id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        uid       TEXT    NOT NULL,
-        name      TEXT    NOT NULL,
-        timestamp INTEGER NOT NULL
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid         TEXT    NOT NULL,
+        name        TEXT    NOT NULL,
+        profilePic  TEXT,
+        timestamp   INTEGER NOT NULL
       )
     ''');
   }
 
   // ----------------------------------------------------------
+  // MIGRACIÓN — de version 1 a version 2
+  // Añade la columna profilePic a la tabla existente
+  // en dispositivos que ya tenían la versión anterior
+  // ----------------------------------------------------------
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE search_history ADD COLUMN profilePic TEXT');
+    }
+  }
+
+  // ----------------------------------------------------------
   // GUARDAR BÚSQUEDA — INSERT / UPDATE
   // Si el usuario ya está en el historial actualiza el timestamp
-  // para que aparezca primero. Si no existe lo inserta.
+  // y la foto por si ha cambiado. Si no existe lo inserta.
   // ----------------------------------------------------------
-  Future<void> saveSearch(String uid, String name) async {
+  Future<void> saveSearch(String uid, String name, {String? profilePic}) async {
     final db = await database;
 
-    // Comprueba si ya existe una entrada para este uid
     final existing = await db.query(
       'search_history',
       where: 'uid = ?',
@@ -118,34 +139,34 @@ class SearchHistoryService {
     );
 
     if (existing.isNotEmpty) {
-      // Actualiza el timestamp para que suba al top
+      // Actualiza timestamp y foto por si ha cambiado
       await db.update(
         'search_history',
-        {'timestamp': DateTime.now().millisecondsSinceEpoch},
+        {
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'profilePic': profilePic,
+        },
         where: 'uid = ?',
         whereArgs: [uid],
       );
     } else {
-      // Inserta nueva entrada
       await db.insert(
         'search_history',
         SearchHistoryEntry(
           uid: uid,
           name: name,
+          profilePic: profilePic,
           timestamp: DateTime.now().millisecondsSinceEpoch,
         ).toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
 
-    // Mantiene un máximo de 10 entradas en el historial
     await _trimHistory(db);
   }
 
   // ----------------------------------------------------------
   // OBTENER HISTORIAL — SELECT ordenado por fecha
-  // Devuelve las últimas búsquedas ordenadas de más reciente
-  // a más antigua, limitado a 10 entradas
   // ----------------------------------------------------------
   Future<List<SearchHistoryEntry>> getHistory() async {
     final db = await database;
@@ -175,7 +196,6 @@ class SearchHistoryService {
 
   // ----------------------------------------------------------
   // LIMITAR HISTORIAL A 10 ENTRADAS
-  // Elimina las entradas más antiguas si hay más de 10
   // ----------------------------------------------------------
   Future<void> _trimHistory(Database db) async {
     await db.execute('''
