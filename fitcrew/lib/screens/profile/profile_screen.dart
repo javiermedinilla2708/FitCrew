@@ -226,25 +226,40 @@ class ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: _colorVerdeMenta, width: 2),
               ),
-              child: CircleAvatar(
-                radius: 55,
-                backgroundColor: _colorVerdeMenta,
-                // Muestra la foto en Base64 si existe, letra inicial si no
-                backgroundImage: _currentPicB64 != null
-                    ? MemoryImage(base64Decode(_currentPicB64!))
-                    : null,
-                child: _currentPicB64 == null
-                    ? Text(
-                        _currentName.isNotEmpty
-                            ? _currentName[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          color: _colorVerdeBosque,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 40,
-                        ),
-                      )
-                    : null,
+              child: GestureDetector(
+                onTap: () {
+                  if (_currentPicB64 != null && _currentPicB64!.isNotEmpty) {
+                    _showFullScreenImage(context, _currentPicB64!);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _colorVerdeMenta, width: 2),
+                  ),
+
+                  child: CircleAvatar(
+                    radius: 55,
+                    backgroundColor: _colorVerdeMenta,
+                    // Muestra la foto en Base64 si existe, letra inicial si no
+                    backgroundImage: _currentPicB64 != null
+                        ? MemoryImage(base64Decode(_currentPicB64!))
+                        : null,
+                    child: _currentPicB64 == null
+                        ? Text(
+                            _currentName.isNotEmpty
+                                ? _currentName[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: _colorVerdeBosque,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 40,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
               ),
             ),
 
@@ -631,13 +646,16 @@ class ProfileScreenState extends State<ProfileScreen> {
                   final postId = posts[index].id;
                   final String base64String = postData['imageUrl'] ?? "";
 
-                  // Cada celda muestra la imagen y boton de eliminar
                   return GestureDetector(
+                    onTap: () {
+                      if (base64String.isNotEmpty) {
+                        _showFullScreenImage(context, base64String);
+                      }
+                    },
                     onLongPress: () => _confirmDeletePost(context, postId),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Imagen del post en Base64
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
@@ -659,8 +677,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                                 )
                               : null,
                         ),
-
-                        // Boton de eliminar en esquina superior derecha
                         Positioned(
                           top: 4,
                           right: 4,
@@ -1820,6 +1836,31 @@ class ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // VISOR DE IMAGEN A PANTALLA COMPLETA
+  // ----------------------------------------------------------
+  void _showFullScreenImage(BuildContext context, String b64) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.memory(base64Decode(b64), fit: BoxFit.contain),
+            ),
+          ),
         ),
       ),
     );

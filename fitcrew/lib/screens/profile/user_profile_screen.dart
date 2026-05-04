@@ -244,22 +244,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: _colorVerdeMenta, width: 2),
             ),
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: _colorVerdeMenta,
-              backgroundImage: _picB64 != null
-                  ? MemoryImage(base64Decode(_picB64!))
-                  : null,
-              child: _picB64 == null
-                  ? Text(
-                      _name.isNotEmpty ? _name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: _colorVerdeBosque,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 36,
-                      ),
-                    )
-                  : null,
+            child: GestureDetector(
+              onTap: () {
+                if (_picB64 != null && _picB64!.isNotEmpty) {
+                  _showFullScreenImage(context, _picB64!);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _colorVerdeMenta, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: _colorVerdeMenta,
+                  backgroundImage: _picB64 != null
+                      ? MemoryImage(base64Decode(_picB64!))
+                      : null,
+                  child: _picB64 == null
+                      ? Text(
+                          _name.isNotEmpty ? _name[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            color: _colorVerdeBosque,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 36,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
             ),
           ),
 
@@ -540,24 +554,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   final data = posts[index].data() as Map<String, dynamic>;
                   final String b64 = data['imageUrl'] ?? '';
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: _colorVerdeMenta.withOpacity(0.2),
-                      image: b64.isNotEmpty
-                          ? DecorationImage(
-                              image: MemoryImage(base64Decode(b64)),
-                              fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () {
+                      if (b64.isNotEmpty) {
+                        _showFullScreenImage(context, b64);
+                      }
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: _colorVerdeMenta.withOpacity(0.2),
+                        image: b64.isNotEmpty
+                            ? DecorationImage(
+                                image: MemoryImage(base64Decode(b64)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: b64.isEmpty
+                          ? Icon(
+                              Icons.fitness_center_rounded,
+                              color: _colorVerdeBosque.withOpacity(0.3),
+                              size: 28,
                             )
                           : null,
                     ),
-                    child: b64.isEmpty
-                        ? Icon(
-                            Icons.fitness_center_rounded,
-                            color: _colorVerdeBosque.withOpacity(0.3),
-                            size: 28,
-                          )
-                        : null,
                   );
                 },
               ),
@@ -627,6 +648,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // VISOR DE IMAGEN A PANTALLA COMPLETA
+  // ----------------------------------------------------------
+  void _showFullScreenImage(BuildContext context, String b64) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.memory(base64Decode(b64), fit: BoxFit.contain),
+            ),
+          ),
+        ),
       ),
     );
   }
