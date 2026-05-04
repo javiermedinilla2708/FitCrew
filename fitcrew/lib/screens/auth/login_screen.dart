@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // LOGICA DE LOGIN CON EMAIL Y CONTRASENA
+  // LOGICA DE LOGIN CON EMAIL Y CONTRASEÑA
   // Valida los campos antes de llamar al ViewModel.
   // Navega a HomeScreen si el login es exitoso.
   // ----------------------------------------------------------
@@ -195,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 25),
 
                 // Campo de contrasena con toggle de visibilidad
-                _buildInputLabel("Contrasena"),
+                _buildInputLabel("Contraseña"),
                 _buildCustomTextField(
                   controller: _passwordController,
                   hint: "................",
@@ -228,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                     child: const Text(
-                      "¿Olvidaste tu contrasena?",
+                      "¿Olvidaste tu contraseña?",
                       style: TextStyle(
                         color: _colorVerdeBosque,
                         fontWeight: FontWeight.bold,
@@ -337,7 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: CAMPO DE TEXTO PERSONALIZADO
-  // Soporta texto normal, contrasena y teclado numerico.
+  // Soporta texto normal, contraseña y teclado numerico.
   // El suffixIcon se usa para el toggle de visibilidad.
   // ----------------------------------------------------------
   Widget _buildCustomTextField({

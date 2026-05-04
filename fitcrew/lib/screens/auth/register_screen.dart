@@ -231,10 +231,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Campo de contrasena con toggle de visibilidad
-                _buildInputLabel("Contrasena"),
+                _buildInputLabel("Contraseña"),
                 _buildCustomTextField(
                   controller: _passwordController,
-                  hint: "Crea tu contrasena",
+                  hint: "Crea tu contraseña",
                   icon: Icons.lock_outline_rounded,
                   obscureText: !_isPasswordVisible,
                   enabled: !isLoading,
