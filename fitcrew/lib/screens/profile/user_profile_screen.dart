@@ -10,6 +10,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/core/utils/app_constants.dart';
+import 'package:fitcrew/screens/profile/followers_screen.dart';
 import 'package:fitcrew/services/follow_services.dart';
 import 'package:flutter/material.dart';
 
@@ -388,9 +389,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         children: [
           Expanded(child: _statItem(_postsCount.toString(), "Posts")),
           const SizedBox(width: 12),
-          Expanded(child: _statItem(_followersCount.toString(), "Seguidores")),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FollowersScreen(
+                    uid: widget.uid,
+                    userName: _name,
+                    mode: FollowersScreenMode.followers,
+                  ),
+                ),
+              ),
+              child: _statItem(_followersCount.toString(), "Seguidores"),
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _statItem(_followingCount.toString(), "Seguidos")),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FollowersScreen(
+                    uid: widget.uid,
+                    userName: _name,
+                    mode: FollowersScreenMode.following,
+                  ),
+                ),
+              ),
+              child: _statItem(_followingCount.toString(), "Seguidos"),
+            ),
+          ),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/main.dart';
+import 'package:fitcrew/screens/profile/followers_screen.dart';
 import 'package:fitcrew/screens/settings/preferences_screen.dart';
 import 'package:fitcrew/screens/settings/privacy_screen.dart';
 import 'package:fitcrew/screens/settings/security_screen.dart';
@@ -319,7 +320,6 @@ class ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          // Posts en tiempo real
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -332,10 +332,7 @@ class ProfileScreenState extends State<ProfileScreen> {
               },
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Seguidores en tiempo real
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -345,14 +342,23 @@ class ProfileScreenState extends State<ProfileScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                return _statItem(count.toString(), "Seguidores");
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FollowersScreen(
+                        uid: _uid,
+                        userName: _currentName,
+                        mode: FollowersScreenMode.followers,
+                      ),
+                    ),
+                  ),
+                  child: _statItem(count.toString(), "Seguidores"),
+                );
               },
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Seguidos en tiempo real
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -362,7 +368,19 @@ class ProfileScreenState extends State<ProfileScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                return _statItem(count.toString(), "Seguidos");
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FollowersScreen(
+                        uid: _uid,
+                        userName: _currentName,
+                        mode: FollowersScreenMode.following,
+                      ),
+                    ),
+                  ),
+                  child: _statItem(count.toString(), "Seguidos"),
+                );
               },
             ),
           ),
