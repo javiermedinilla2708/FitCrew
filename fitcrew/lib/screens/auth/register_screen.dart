@@ -254,10 +254,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Campo de confirmacion de contrasena
-                _buildInputLabel("Confirmar contrasena"),
+                _buildInputLabel("Confirmar contraseña"),
                 _buildCustomTextField(
                   controller: _confirmPasswordController,
-                  hint: "Repetir contrasena",
+                  hint: "Repetir contraseña",
                   icon: Icons.lock_outline_rounded,
                   obscureText: !_isConfirmPasswordVisible,
                   action: TextInputAction.done,

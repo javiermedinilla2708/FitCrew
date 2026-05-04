@@ -429,15 +429,34 @@ class _SearchUsersScreenState extends State<SearchUsersScreen>
             final fromUid = data['fromUid'] as String;
             final fromName = data['fromName'] as String;
 
-            return _RequestCard(
-              key: ValueKey(requestId),
-              requestId: requestId,
-              fromUid: fromUid,
-              fromName: fromName,
-              followService: _followService,
-              onSnackBar: _showSnackBar,
-              followStatusCache: _followStatusCache,
-              onDismiss: () => setState(() => _knownRequests.remove(requestId)),
+            // Carga la foto del solicitante
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(fromUid)
+                  .get(),
+              builder: (context, userSnap) {
+                String? profilePic;
+                if (userSnap.hasData && userSnap.data!.exists) {
+                  profilePic =
+                      (userSnap.data!.data()
+                              as Map<String, dynamic>)['profilePic']
+                          as String?;
+                }
+
+                return _RequestCard(
+                  key: ValueKey(requestId),
+                  requestId: requestId,
+                  fromUid: fromUid,
+                  fromName: fromName,
+                  profilePic: profilePic,
+                  followService: _followService,
+                  onSnackBar: _showSnackBar,
+                  followStatusCache: _followStatusCache,
+                  onDismiss: () =>
+                      setState(() => _knownRequests.remove(requestId)),
+                );
+              },
             );
           },
         );
@@ -1041,6 +1060,7 @@ class _RequestCard extends StatefulWidget {
   final String requestId;
   final String fromUid;
   final String fromName;
+  final String? profilePic;
   final FollowService followService;
   final void Function(String) onSnackBar;
   final Map<String, String> followStatusCache;
@@ -1051,6 +1071,7 @@ class _RequestCard extends StatefulWidget {
     required this.requestId,
     required this.fromUid,
     required this.fromName,
+    this.profilePic,
     required this.followService,
     required this.onSnackBar,
     required this.followStatusCache,
@@ -1135,14 +1156,20 @@ class _RequestCardState extends State<_RequestCard> {
               CircleAvatar(
                 radius: 26,
                 backgroundColor: _colorVerdeMenta,
-                child: Text(
-                  widget.fromName[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: _colorVerdeBosque,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
+                backgroundImage:
+                    widget.profilePic != null && widget.profilePic!.isNotEmpty
+                    ? MemoryImage(base64Decode(widget.profilePic!))
+                    : null,
+                child: widget.profilePic == null || widget.profilePic!.isEmpty
+                    ? Text(
+                        widget.fromName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: _colorVerdeBosque,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 14),
               Expanded(
