@@ -5,6 +5,7 @@
 // Soporta login con email y contraseña y con Google.
 // ============================================================
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:fitcrew/screens/auth/forgot_password_screen.dart';
 import 'package:fitcrew/screens/filters/filter_screen.dart';
 import 'package:flutter/material.dart';
@@ -127,14 +128,27 @@ class _LoginScreenState extends State<LoginScreen> {
   // SNACKBAR
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: _colorVerdeBosque,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Flushbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          fontSize: 14,
+        ),
       ),
-    );
+      icon: const Icon(
+        Icons.error_outline_rounded,
+        color: Colors.white,
+        size: 22,
+      ),
+      duration: const Duration(seconds: 3),
+      backgroundColor: _colorVerdeBosque,
+      borderRadius: BorderRadius.circular(15),
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      flushbarPosition: FlushbarPosition.BOTTOM,
+    ).show(context);
   }
 
   // ----------------------------------------------------------

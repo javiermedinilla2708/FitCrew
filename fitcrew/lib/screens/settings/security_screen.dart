@@ -4,6 +4,7 @@
 // correo de restablecimiento via Firebase Auth
 // ============================================================
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -35,16 +36,27 @@ class _SecurityScreenState extends State<SecurityScreen> {
       if (mounted) setState(() => _sent = true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Error al enviar el correo"),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Flushbar(
+          messageText: const Text(
+            "Error al enviar el correo",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: 14,
             ),
           ),
-        );
+          icon: const Icon(
+            Icons.error_outline_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red.shade700,
+          borderRadius: BorderRadius.circular(15),
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          flushbarPosition: FlushbarPosition.BOTTOM,
+        ).show(context);
       }
     } finally {
       if (mounted) setState(() => _sending = false);

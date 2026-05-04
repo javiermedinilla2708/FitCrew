@@ -4,6 +4,7 @@
 // Los cambios se guardan en Firestore via UserService.
 // ============================================================
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/services/user_services.dart';
@@ -64,20 +65,29 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     try {
       await _userService.updateNotificationsEnabled(_uid, value);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              value
-                  ? "Notificaciones activadas"
-                  : "Notificaciones desactivadas",
-            ),
-            backgroundColor: _colorVerdeBosque,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Flushbar(
+          messageText: Text(
+            value ? "Notificaciones activadas" : "Notificaciones desactivadas",
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: 14,
             ),
           ),
-        );
+          icon: Icon(
+            value
+                ? Icons.notifications_active_rounded
+                : Icons.notifications_off_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: _colorVerdeBosque,
+          borderRadius: BorderRadius.circular(15),
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          flushbarPosition: FlushbarPosition.BOTTOM,
+        ).show(context);
       }
     } catch (e) {
       setState(() => _notificationsOn = !value);

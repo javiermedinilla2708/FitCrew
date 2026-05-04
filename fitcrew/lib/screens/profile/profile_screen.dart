@@ -1738,27 +1738,34 @@ class ProfileScreenState extends State<ProfileScreen> {
 
                 if (!reauth) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          "Contrasena incorrecta",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        backgroundColor: Colors.red[700],
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        margin: const EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          bottom: 30,
+                    Flushbar(
+                      messageText: const Text(
+                        "Contrasena incorrecta",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
                       ),
-                    );
+                      icon: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: Colors.red.shade700,
+                      borderRadius: BorderRadius.circular(15),
+                      margin: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 30,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      flushbarPosition: FlushbarPosition.BOTTOM,
+                    ).show(context);
                   }
                   return;
                 }
@@ -1773,27 +1780,34 @@ class ProfileScreenState extends State<ProfileScreen> {
                   );
                 } else {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          "Error al eliminar la cuenta",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        backgroundColor: Colors.red[700],
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        margin: const EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          bottom: 30,
+                    Flushbar(
+                      messageText: const Text(
+                        "Error al eliminar la cuenta",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
                       ),
-                    );
+                      icon: const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: Colors.red.shade700,
+                      borderRadius: BorderRadius.circular(15),
+                      margin: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 30,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      flushbarPosition: FlushbarPosition.BOTTOM,
+                    ).show(context);
                   }
                 }
               },

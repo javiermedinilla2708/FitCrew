@@ -5,6 +5,7 @@
 // solo ven sus estadísticas básicas.
 // ============================================================
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/services/user_services.dart';
@@ -63,18 +64,27 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     try {
       await _userService.updatePrivacy(_uid, value);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              value ? "Perfil cambiado a privado" : "Perfil cambiado a publico",
-            ),
-            backgroundColor: _colorVerdeBosque,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Flushbar(
+          messageText: Text(
+            value ? "Perfil cambiado a privado" : "Perfil cambiado a publico",
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: 14,
             ),
           ),
-        );
+          icon: Icon(
+            value ? Icons.lock_rounded : Icons.lock_open_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: _colorVerdeBosque,
+          borderRadius: BorderRadius.circular(15),
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          flushbarPosition: FlushbarPosition.BOTTOM,
+        ).show(context);
       }
     } catch (e) {
       // Revertir si falla

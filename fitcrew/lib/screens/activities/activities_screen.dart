@@ -1261,16 +1261,34 @@ class _ActivityScreenState extends State<ActivityScreen>
                             if (mounted && ok) {
                               _dismissCard();
                               widget.onStatsChanged?.call();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text("Te has desapuntado"),
-                                  backgroundColor: Colors.grey[700],
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                              Flushbar(
+                                messageText: const Text(
+                                  "Te has desapuntado",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    fontSize: 14,
                                   ),
                                 ),
-                              );
+                                icon: const Icon(
+                                  Icons.exit_to_app_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                                duration: const Duration(seconds: 3),
+                                backgroundColor: Colors.grey[700]!,
+                                borderRadius: BorderRadius.circular(15),
+                                margin: const EdgeInsets.only(
+                                  left: 20,
+                                  right: 20,
+                                  bottom: 100,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                flushbarPosition: FlushbarPosition.BOTTOM,
+                              ).show(context);
                             }
                           } else if (!isFull) {
                             // Apuntarse
@@ -1278,16 +1296,34 @@ class _ActivityScreenState extends State<ActivityScreen>
                             if (mounted && ok) {
                               _dismissCard();
                               widget.onStatsChanged?.call();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text("¡Te has apuntado!"),
-                                  backgroundColor: _colorVerdeBosque,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                              Flushbar(
+                                messageText: const Text(
+                                  "¡Te has apuntado!",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    fontSize: 14,
                                   ),
                                 ),
-                              );
+                                icon: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                                duration: const Duration(seconds: 3),
+                                backgroundColor: _colorVerdeBosque,
+                                borderRadius: BorderRadius.circular(15),
+                                margin: const EdgeInsets.only(
+                                  left: 20,
+                                  right: 20,
+                                  bottom: 100,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                flushbarPosition: FlushbarPosition.BOTTOM,
+                              ).show(context);
                             }
                           }
                         },
@@ -1670,7 +1706,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
     final now = DateTime.now();
     TimeOfDay selectedTime = TimeOfDay(hour: (now.hour + 2) % 24, minute: 0);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    ScaffoldMessenger.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -2070,12 +2106,34 @@ class _ActivityScreenState extends State<ActivityScreen>
                         onPressed: () async {
                           if (titleController.text.trim().isEmpty) return;
                           if (locationController.text.trim().isEmpty) {
-                            scaffoldMessenger.showSnackBar(
-                              const SnackBar(
-                                content: Text("Añade una ubicación al evento"),
-                                behavior: SnackBarBehavior.floating,
+                            Flushbar(
+                              messageText: const Text(
+                                "Añade una ubicación al evento",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
-                            );
+                              icon: const Icon(
+                                Icons.location_off_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: Colors.red.shade700,
+                              borderRadius: BorderRadius.circular(15),
+                              margin: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 100,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              flushbarPosition: FlushbarPosition.BOTTOM,
+                            ).show(context);
                             return;
                           }
 

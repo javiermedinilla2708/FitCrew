@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // ----------------------------------------------------------
   Future<void> _handlePublish(PostViewModel postVM) async {
     if (postVM.imageFile == null) {
-      _showSnackBar("¡Oye! Sube una foto de tu entreno 📸");
+      _showSnackBar("¡Oye! Sube una foto de tu entreno");
       return;
     }
     if (_selectedSport == null) {
@@ -87,17 +88,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // SNACKBAR
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+    Flushbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          fontSize: 14,
         ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: _colorVerdeBosque,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
-    );
+      icon: const Icon(
+        Icons.error_outline_rounded,
+        color: Colors.white,
+        size: 22,
+      ),
+      duration: const Duration(seconds: 3),
+      backgroundColor: _colorVerdeBosque,
+      borderRadius: BorderRadius.circular(15),
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      flushbarPosition: FlushbarPosition.BOTTOM,
+    ).show(context);
   }
 
   // ----------------------------------------------------------

@@ -253,13 +253,14 @@ class _TutorialScreenState extends State<TutorialScreen>
   // Zona inferior con titulo y descripcion de la funcionalidad.
   // ----------------------------------------------------------
   Widget _buildPage(_TutorialPage page) {
-    return Column(
-      children: [
-        // Zona superior coloreada con icono
-        Expanded(
-          flex: 5,
-          child: Container(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          // Zona superior coloreada con icono
+          Container(
             width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.55,
             decoration: BoxDecoration(
               color: page.color,
               borderRadius: const BorderRadius.only(
@@ -270,9 +271,9 @@ class _TutorialScreenState extends State<TutorialScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 80),
+                SizedBox(height: MediaQuery.of(context).padding.top + 60),
 
-                // Circulo decorativo con icono de la funcionalidad
+                // Circulo decorativo con icono
                 Container(
                   width: 140,
                   height: 140,
@@ -310,13 +311,16 @@ class _TutorialScreenState extends State<TutorialScreen>
               ],
             ),
           ),
-        ),
 
-        // Zona inferior con titulo y descripcion
-        Expanded(
-          flex: 4,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(32, 40, 32, 120),
+          // Zona inferior con titulo y descripcion
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              32,
+              40,
+              32,
+              // Espacio suficiente para los controles inferiores
+              MediaQuery.of(context).padding.bottom + 180,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -330,9 +334,7 @@ class _TutorialScreenState extends State<TutorialScreen>
                     letterSpacing: -0.5,
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 Text(
                   page.description,
                   style: TextStyle(
@@ -344,8 +346,8 @@ class _TutorialScreenState extends State<TutorialScreen>
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
