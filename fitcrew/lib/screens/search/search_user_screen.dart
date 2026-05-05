@@ -1100,12 +1100,12 @@ class _RequestCardState extends State<_RequestCard> {
         widget.fromUid,
       );
       if (ok && mounted) {
-        final status =
-            widget.followStatusCache[widget.fromUid] ??
-            await widget.followService.getFollowStatus(widget.fromUid);
+        final status = await widget.followService.getFollowStatus(
+          widget.fromUid,
+        );
         setState(() {
           _accepted = true;
-          _alreadyFollowing = status == 'following';
+          _alreadyFollowing = status == 'following' || status == 'pending';
         });
         widget.onSnackBar("Has aceptado a ${widget.fromName}");
       }
@@ -1117,13 +1117,10 @@ class _RequestCardState extends State<_RequestCard> {
   Future<void> _followBack() async {
     setState(() => _loadingFollow = true);
     try {
-      final sent = await widget.followService.sendFollowRequest(
-        widget.fromUid,
-        widget.fromName,
-      );
-      if (sent && mounted) {
-        widget.followStatusCache[widget.fromUid] = 'pending';
-        widget.onSnackBar("Solicitud enviada a ${widget.fromName}");
+      final ok = await widget.followService.followDirectly(widget.fromUid);
+      if (ok && mounted) {
+        widget.followStatusCache[widget.fromUid] = 'following';
+        widget.onSnackBar("Ahora sigues a ${widget.fromName}");
         setState(() => _alreadyFollowing = true);
       }
     } finally {

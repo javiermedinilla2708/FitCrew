@@ -7,6 +7,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/services/notification_service.dart';
+import 'package:flutter/material.dart';
 
 class FollowService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -179,6 +180,54 @@ class FollowService {
       await batch.commit();
       return true;
     } catch (e) {
+      return false;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // SEGUIR DIRECTAMENTE SIN SOLICITUD
+  // Se usa cuando ya existe una relación de seguimiento mutua
+  // por ejemplo tras aceptar una solicitud recibida
+  // ----------------------------------------------------------
+  Future<bool> followDirectly(String targetUid) async {
+    if (_currentUid == null) return false;
+    try {
+      // Comprobar si ya le sigue para evitar duplicados
+      final alreadyFollowing = await _db
+          .collection('users')
+          .doc(_currentUid)
+          .collection('following')
+          .doc(targetUid)
+          .get();
+
+      if (alreadyFollowing.exists) return true;
+
+      final batch = _db.batch();
+
+      // Añadir a following del usuario actual
+      batch.set(
+        _db
+            .collection('users')
+            .doc(_currentUid)
+            .collection('following')
+            .doc(targetUid),
+        {'timestamp': FieldValue.serverTimestamp()},
+      );
+
+      // Añadir a followers del usuario objetivo
+      batch.set(
+        _db
+            .collection('users')
+            .doc(targetUid)
+            .collection('followers')
+            .doc(_currentUid),
+        {'timestamp': FieldValue.serverTimestamp()},
+      );
+
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint("Error en followDirectly: $e");
       return false;
     }
   }
