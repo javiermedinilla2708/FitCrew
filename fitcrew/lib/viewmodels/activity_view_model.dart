@@ -56,11 +56,14 @@ class ActivityViewModel extends ChangeNotifier {
   // ----------------------------------------------------------
   // ESCUCHAR ACTIVIDADES EN TIEMPO REAL
   // ----------------------------------------------------------
+
   void listenToActivities() {
     _subscription?.cancel();
 
     _isLoading = true;
     _notify();
+
+    deleteExpiredActivities();
 
     _subscription = _activityService.getActivitiesStream().listen(
       (newList) {
@@ -123,6 +126,35 @@ class ActivityViewModel extends ChangeNotifier {
       _errorMessage = e.toString();
       _notify();
       return false;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // ELIMINAR ACTIVIDADES EXPIRADAS (mas de 24 horas)
+  // Solo borra en Firestore, no afecta a la API REST
+  // Se llama automaticamente al iniciar el stream
+  // ----------------------------------------------------------
+  Future<void> deleteExpiredActivities() async {
+    try {
+      final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+      final snap = await FirebaseFirestore.instance
+          .collection('activities')
+          .where('date', isLessThan: Timestamp.fromDate(cutoff))
+          .get();
+
+      if (snap.docs.isEmpty) return;
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+
+      debugPrint(
+        '${snap.docs.length} actividades expiradas eliminadas de Firestore',
+      );
+    } catch (e) {
+      debugPrint('Error eliminando actividades expiradas: $e');
     }
   }
 
