@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitcrew/models/app_notification.dart';
 import 'package:fitcrew/models/notification_type.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class NotificationService {
@@ -357,6 +358,25 @@ class NotificationService {
       await _db.collection('notifications').doc(notificationId).delete();
     } catch (e) {
       // Silencioso
+    }
+  }
+
+  Future<void> deleteAllNotifications() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('toUid', isEqualTo: uid)
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint("Error borrando notificaciones: $e");
     }
   }
 }

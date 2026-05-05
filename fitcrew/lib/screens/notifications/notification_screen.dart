@@ -41,6 +41,93 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   // ----------------------------------------------------------
+  // DIALOGO DE CONFIRMACION — borrar todas las notificaciones
+  // ----------------------------------------------------------
+  void _confirmDeleteAll() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_sweep_rounded,
+                color: _colorVerdeBosque,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Borrar notificaciones",
+              style: TextStyle(
+                color: _colorVerdeBosque,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Se eliminarán todas tus notificaciones. Esta acción no se puede deshacer.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _colorVerdeBosque,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _notifService.deleteAllNotifications();
+                },
+                child: const Text(
+                  "Borrar todas",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  "Cancelar",
+                  style: TextStyle(
+                    color: _colorVerdeBosque,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
   // ICONO SEGÚN TIPO DE NOTIFICACIÓN
   // ----------------------------------------------------------
   IconData _getIcon(String type) {
@@ -109,11 +196,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
         actions: [
-          // Botón marcar todas como leídas
+          // Boton marcar todas como leidas
           TextButton(
-            onPressed: () async {
-              await _notifService.markAllAsRead();
-            },
+            onPressed: () async => await _notifService.markAllAsRead(),
             child: const Text(
               "Leer todo",
               style: TextStyle(
@@ -122,6 +207,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 fontSize: 13,
               ),
             ),
+          ),
+
+          // Boton borrar todas las notificaciones
+          IconButton(
+            icon: const Icon(
+              Icons.delete_sweep_rounded,
+              color: _colorVerdeBosque,
+            ),
+            tooltip: "Borrar todas",
+            onPressed: () => _confirmDeleteAll(),
           ),
         ],
       ),

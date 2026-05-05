@@ -57,7 +57,9 @@ class PushNotificationService {
     await androidPlugin?.createNotificationChannel(_channel);
 
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings(
+        '@drawable/ic_launcher_foreground',
+      ),
       iOS: DarwinInitializationSettings(),
     );
 
@@ -150,7 +152,7 @@ class PushNotificationService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_launcher_foreground',
           playSound: true,
           enableVibration: true,
         ),

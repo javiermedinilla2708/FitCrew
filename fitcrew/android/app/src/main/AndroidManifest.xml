@@ -27,9 +27,15 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="fitcrew_channel" />
 
+        <!-- Icono monocromatico para la barra de estado -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/launcher_icon" />
+            android:resource="@drawable/ic_launcher_foreground" />
+
+        <!-- Color verde FitCrew para el fondo del icono -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
 
         <activity
             android:name=".MainActivity"
