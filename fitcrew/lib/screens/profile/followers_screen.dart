@@ -391,7 +391,6 @@ class _FollowersScreenState extends State<FollowersScreen> {
                               ),
 
                               // Boton seguir/siguiendo/pendiente
-                              // Solo si no soy yo mismo
                               if (!isMe)
                                 GestureDetector(
                                   onTap: () => _handleFollowAction(uid, name),

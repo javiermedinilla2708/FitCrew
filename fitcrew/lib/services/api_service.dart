@@ -10,9 +10,6 @@ import 'package:http/http.dart' as http;
 // ============================================================
 
 class ApiService {
-  // ----------------------------------------------------------
-  // URL BASE
-  // ----------------------------------------------------------
   // URL pública de Railway
   static const String _baseUrl =
       'https://fitcrew-production-5fe4.up.railway.app';
@@ -109,14 +106,14 @@ class ApiService {
     try {
       final headers = await _headers();
       final token = headers['Authorization'];
-      print('Token: ${token?.substring(0, 20)}...'); // Ver si hay token
+      print('Token: ${token?.substring(0, 20)}...');
 
       final uri = Uri.parse('$_baseUrl/ranking/global');
-      print('Llamando a: $uri'); // Ver la URL
+      print('Llamando a: $uri');
 
       final response = await http
           .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 30)); // Timeout de 30 segundos
+          .timeout(const Duration(seconds: 30));
 
       print('Status code: ${response.statusCode}');
       print('Body: ${response.body.substring(0, 100)}');
@@ -127,7 +124,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Error en getGlobalRanking: $e'); // Ver el error exacto
+      print('Error en getGlobalRanking: $e');
       return [];
     }
   }
@@ -151,10 +148,6 @@ class ApiService {
     }
   }
 }
-
-// ============================================================
-// MODELOS DART
-// ============================================================
 
 // ----------------------------------------------------------
 // UserStats

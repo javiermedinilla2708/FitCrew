@@ -132,7 +132,7 @@ class StatsViewModel extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------
-  // CARGAR TODO A LA VEZ
+  // CARGAR
   // ----------------------------------------------------------
   Future<void> loadAll() async {
     await Future.wait([

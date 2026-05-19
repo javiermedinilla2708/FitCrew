@@ -149,7 +149,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ----------------------------------------------------------
-  // SNACKBAR
+  // FLUSHBAR
+  // Muestra un mensaje de error personalizado en la parte inferior
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
     Flushbar(

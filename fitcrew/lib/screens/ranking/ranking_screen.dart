@@ -43,7 +43,7 @@ class _RankingScreenState extends State<RankingScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Cargamos datos al entrar
+    // Se cargan los datos al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StatsViewModel>().loadAll();
     });

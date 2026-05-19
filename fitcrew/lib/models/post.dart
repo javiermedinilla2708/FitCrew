@@ -20,7 +20,7 @@ class Post {
   final String? userPic; // URL de foto de perfil del autor
   final String sportType; // Deporte asociado al post
   final String description; // Texto descriptivo del logro
-  final String? imageUrl; // Imagen en Base64 (pendiente migrar a Storage)
+  final String? imageUrl; // Imagen en Base64
   final DateTime date; // Fecha y hora de publicación
   final int likesCount; // Contador auxiliar de likes
   final int commentsCount; // Contador auxiliar de comentarios

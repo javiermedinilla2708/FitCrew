@@ -235,7 +235,6 @@ class _ActivityScreenState extends State<ActivityScreen>
     });
   }
 
-  // Calcula el offset inferior para no solapar con la BottomNav
   double _bottomOffset(BuildContext context) =>
       70 + 20 + MediaQuery.of(context).padding.bottom;
 
@@ -399,7 +398,6 @@ class _ActivityScreenState extends State<ActivityScreen>
             ],
           ),
 
-          // Overlay verde muy suave para unificar el tono con la app
           IgnorePointer(
             child: Container(color: _colorVerdeBosque.withOpacity(0.08)),
           ),
@@ -1484,7 +1482,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                       margin: const EdgeInsets.only(
                         left: 20,
                         right: 20,
-                        bottom: 100, // ajusta este valor para subir o bajar
+                        bottom: 100,
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -1897,7 +1895,6 @@ class _ActivityScreenState extends State<ActivityScreen>
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            // Mostramos el nombre completo en la lista
                                             name,
                                             style: const TextStyle(
                                               fontSize: 14,

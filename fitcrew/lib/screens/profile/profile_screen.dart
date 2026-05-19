@@ -429,7 +429,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   // ----------------------------------------------------------
   // SEGMENTO: DASHBOARD DE RENDIMIENTO
   // Circulo de Entrenos: totalActivitiesJoined de la API
-  //   maximo = 30 actividades (referencia mensual)
+  //   maximo = 30 actividades
   // Barras de deportes: actividades reales por deporte
   //   la barra mas larga es el deporte con mas actividades
   // ----------------------------------------------------------
@@ -445,7 +445,7 @@ class ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Circulo de Entrenos con datos reales de la API
+          // Circulo de Entrenos
           Expanded(
             flex: 4,
             child: _cardWrapper(

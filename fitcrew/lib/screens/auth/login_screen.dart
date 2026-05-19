@@ -125,7 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ----------------------------------------------------------
-  // SNACKBAR
+  // FLUSHBAR
+  // Muestra un mensaje de error personalizado en la parte inferior
   // ----------------------------------------------------------
   void _showSnackBar(String message) {
     Flushbar(
@@ -470,7 +471,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo oficial de Google como asset
+              // Logo oficial de Google
               Image.asset(
                 'assets/images/google_logo.png',
                 width: 26,

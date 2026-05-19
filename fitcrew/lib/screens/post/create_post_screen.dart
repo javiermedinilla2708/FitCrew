@@ -298,9 +298,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // ----------------------------------------------------------
   // SEGMENTO: ACCESOS SOCIALES (ubicación y amigos)
   // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  // SEGMENTO: ACCESOS SOCIALES
-  // ----------------------------------------------------------
+
   Widget _buildSocialShortcuts() {
     return Row(
       children: [

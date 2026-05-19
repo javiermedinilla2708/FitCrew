@@ -43,7 +43,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Estado de seguimiento
   String _followStatus = 'none'; // none, pending, following
 
-  // Estadísticas básicas (siempre visibles)
+  // Estadísticas básicas
   int _postsCount = 0;
   int _followersCount = 0;
   int _followingCount = 0;
@@ -69,7 +69,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       final data = doc.data()!;
 
-      // Stats básicas — siempre visibles
+      // Stats básicas
       final postsSnap = await FirebaseFirestore.instance
           .collection('posts')
           .where('userId', isEqualTo: widget.uid)

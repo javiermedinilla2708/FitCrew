@@ -36,7 +36,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Configurar timeago en español
     timeago.setLocaleMessages('es', timeago.EsMessages());
   }
 

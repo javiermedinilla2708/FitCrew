@@ -1,9 +1,7 @@
 // ============================================================
 // lib/services/search_history_service.dart
 // Gestiona el historial de búsquedas recientes usando SQLite
-// local via sqflite. Cubre los RA2 y RA3 de Acceso a Datos:
-//   - RA2: base de datos relacional con SQL
-//   - RA3: mapeo objeto-relacional (ORM) con Pydantic/Dart
+// local via sqflite.
 // ============================================================
 
 import 'package:sqflite/sqflite.dart';

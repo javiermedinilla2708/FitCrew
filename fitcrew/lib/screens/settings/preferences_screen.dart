@@ -1,6 +1,6 @@
 // ============================================================
 // lib/screens/settings/preferences_screen.dart
-// Permite al usuario configurar notificaciones e idioma.
+// Permite al usuario configurar notificaciones.
 // Los cambios se guardan en Firestore via UserService.
 // ============================================================
 
@@ -148,7 +148,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
                 const SizedBox(height: 12),
 
-                // Aviso idioma
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(

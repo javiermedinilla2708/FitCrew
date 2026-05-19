@@ -13,7 +13,7 @@ class AppUser {
   final String name; // Nombre visible del usuario
   final String email; // Correo electrónico normalizado
   final List<String> favoriteSports; // Deportes seleccionados en el onboarding
-  final String? profilePic; // URL de foto de perfil (pendiente Storage)
+  final String? profilePic; // URL de foto de perfil
 
   const AppUser({
     required this.uid,

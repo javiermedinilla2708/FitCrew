@@ -83,8 +83,8 @@ class PostViewModel extends ChangeNotifier {
     required String description,
     required String sportType,
     required String level,
-    String? location, // ✅
-    List<Map<String, String>> taggedUsers = const [], // ✅
+    String? location,
+    List<Map<String, String>> taggedUsers = const [],
   }) async {
     if (description.isEmpty || _base64Image == null) return false;
 

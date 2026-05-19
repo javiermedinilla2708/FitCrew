@@ -192,7 +192,7 @@ class _TutorialScreenState extends State<TutorialScreen>
             right: 24,
             child: Column(
               children: [
-                // Indicadores de pagina animados
+                // Indicadores de pagina
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -257,7 +257,6 @@ class _TutorialScreenState extends State<TutorialScreen>
       physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          // Zona superior coloreada con icono
           Container(
             width: double.infinity,
             height: MediaQuery.of(context).size.height * 0.55,
@@ -318,7 +317,7 @@ class _TutorialScreenState extends State<TutorialScreen>
               32,
               40,
               32,
-              // Espacio suficiente para los controles inferiores
+
               MediaQuery.of(context).padding.bottom + 180,
             ),
             child: Column(

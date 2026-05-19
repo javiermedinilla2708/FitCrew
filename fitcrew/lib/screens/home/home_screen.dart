@@ -628,7 +628,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 4),
 
                       // Chips de deporte, nivel y ubicacion
-                      // Chips de deporte, nivel y ubicacion
                       Wrap(
                         spacing: 6,
                         runSpacing: 4,
@@ -841,9 +840,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ----------------------------------------------------------
   // HELPER: chip de metadatos (deporte, nivel, ubicacion)
   // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  // HELPER: icono segun nivel de intensidad
-  // ----------------------------------------------------------
+
   IconData _getLevelIcon(String level) {
     switch (level.toLowerCase()) {
       case 'principiante':
@@ -996,7 +993,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Barra flotante con 5 elementos:
   //   0 - Home (feed)
   //   1 - Ranking
-  //   + - Crear post (abre CreatePostScreen como push)
+  //   + - Crear post
   //   2 - Mapa de actividades
   //   3 - Perfil propio
   // ----------------------------------------------------------
@@ -1087,7 +1084,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // ----------------------------------------------------------
   // SEGMENTO: OTRAS PANTALLAS (IndexedStack)
   // Gestiona las pantallas que no son el feed principal.
-  // El indice 1 (busqueda) se omite porque se abre como push.
   // ----------------------------------------------------------
   Widget _buildOtherScreens() {
     return IndexedStack(
@@ -1116,8 +1112,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ----------------------------------------------------------
   // SEGMENTO: MODAL DE COMENTARIOS
-  // DraggableScrollableSheet con lista de comentarios en tiempo
-  // real y campo de texto para añadir nuevos comentarios.
+  // DraggableScrollableSheet con lista de comentarios
   // ----------------------------------------------------------
   void _showComments(BuildContext context, String postId) {
     final TextEditingController commentController = TextEditingController();
@@ -1128,7 +1123,6 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       useSafeArea: true,
       builder: (context) => Padding(
-        // Empuja el modal hacia arriba cuando aparece el teclado
         padding: MediaQuery.of(context).viewInsets,
         child: DraggableScrollableSheet(
           initialChildSize: 0.7,
@@ -1342,8 +1336,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     // Campo de texto para añadir comentario
-                    // El padding bottom es fijo porque el teclado
-                    // ya se gestiona con el Padding exterior del modal
                     Padding(
                       padding: const EdgeInsets.only(
                         bottom: 20,
